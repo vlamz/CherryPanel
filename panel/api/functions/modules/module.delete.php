@@ -19,4 +19,14 @@
  
  namespace Modules\Delete;
  
+ class apiModuleDeleteServer {
+ 
+ 	public function __construct() {
+ 	
+ 	
+ 	
+ 	}
+ 
+ }
+ 
  ?>
