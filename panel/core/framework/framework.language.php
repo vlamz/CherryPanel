@@ -59,6 +59,12 @@ class lang {
  		}
  	
  	}
+ 	
+ 	public function loadTemplates() {
+ 	
+ 		return $this->loaded_language;
+ 	
+ 	}
  	 
  }
  

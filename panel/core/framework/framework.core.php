@@ -30,7 +30,7 @@ $_SERVER['REMOTE_ADDR'] = (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) ? $_SERVER[
 /*
  * Include Dependency Libs
  */
-require_once '../vendor/autoload.php';
+require_once('../vendor/autoload.php');
 require_once('lib/password.lib.php');
 
 /* 
@@ -92,7 +92,8 @@ $mysql = Database\database::connect();
 
 
 function pdo_exception_handler($exception) {
-    if ($exception instanceof PDOException) {
+    
+    if($exception instanceof PDOException) {
         
         error_log($exception);
         exit('<!DOCTYPE html>
@@ -112,9 +113,19 @@ function pdo_exception_handler($exception) {
         
     } else {
     
-    	die('Exception handler from unknown source.');
+    	die(nl2br($exception));
+    	//die('Exception handler from unknown source.');
     
     }
 }
 
+Twig_Autoloader::register();
+
+$loader = new Twig_Loader_Filesystem('../app/views/');
+$twig = new Twig_Environment($loader, array(
+    'cache' => false,
+));
+$twig->addGlobal(
+	'lang', $_l->loadTemplates()
+)
 ?>
