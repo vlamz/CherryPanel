@@ -2,17 +2,17 @@
 /*
     PufferPanel - A Minecraft Server Management Panel
     Copyright (c) 2013 Dane Everitt
- 
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
- 
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
- 
+
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see http://www.gnu.org/licenses/.
  */
@@ -27,13 +27,13 @@ setcookie("__TMP_pp_admin_updateglobal", json_encode($_POST), time() + 30, '/', 
 
 if(!isset($_POST['smail_method'], $_POST['sendmail_email'], $_POST['postmark_api_key'], $_POST['mandrill_api_key'], $_POST['mailgun_api_key'], $_POST['sendgrid_api_key']))
 	Page\components::redirect('../global.php?error=smail_method|sendmail_email|postmark_api_key|mandrill_api_key|mailgun_api_key|sendgrid_api_key&tab=email');
-	
+
 if(!in_array($_POST['smail_method'], array('php', 'postmark', 'mandrill', 'mailgun', 'sendgrid')))
 	Page\components::redirect('../global.php?error=smail_method&tab=email');
-	
+
 if(!filter_var($_POST['sendmail_email'], FILTER_VALIDATE_EMAIL))
 	Page\components::redirect('../global.php?error=sendmail_email&tab=email');
-	
+
 if($_POST['smail_method'] != 'php' && empty($_POST[$_POST['smail_method'].'_api_key']))
 	Page\components::redirect('../global.php?error=smail_method|'.$_POST['smail_method'].'_api_key&tab=email');
 
