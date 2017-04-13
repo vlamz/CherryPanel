@@ -124,8 +124,8 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   PRIMARY KEY (`id`),
   KEY `FK_permissions_users` (`user`),
   KEY `FK_permissions_servers` (`server`),
-  CONSTRAINT `FK_permissions_servers` FOREIGN KEY (`server`) REFERENCES `servers` (`id`),
-  CONSTRAINT `FK_permissions_users` FOREIGN KEY (`user`) REFERENCES `users` (`id`)
+  CONSTRAINT `FK_permissions_servers` FOREIGN KEY (`server`) REFERENCES `servers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `FK_permissions_users` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `subusers` (
@@ -176,11 +176,9 @@ VALUES (1, 'Localhost', 'Localhost');
 DROP EVENT IF EXISTS `oauthTokenCleaner`;
 
 DELIMITER //
-CREATE  EVENT `oauthTokenCleaner` ON SCHEDULE EVERY 12 HOUR STARTS '2017-03-12 20:09:27' ON COMPLETION PRESERVE ENABLE COMMENT 'Cleans up the oauth access tokens' DO DELETE FROM oauth_access_tokens WHERE expireTime < NOW()//
+CREATE EVENT `oauthTokenCleaner` ON SCHEDULE EVERY 12 HOUR ON COMPLETION PRESERVE ENABLE COMMENT 'Cleans up the oauth access tokens' DO DELETE FROM oauth_access_tokens WHERE expireTime < NOW()//
 DELIMITER ;
 
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
 CREATE TRIGGER `subusers_before_delete` BEFORE DELETE ON `subusers` FOR EACH ROW DELETE FROM oauth_clients WHERE oauth_clients.user_id = OLD.user AND oauth_clients.server_id = OLD.server//
 DELIMITER ;
-SET SQL_MODE=@OLDTMP_SQL_MODE;
