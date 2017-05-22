@@ -177,8 +177,8 @@ CREATE TABLE IF NOT EXISTS `_meta` (
 );
 
 INSERT INTO _meta (metaKey, metaValue) VALUES
-  ('version', '1.1.1'),
-  ('originalVersion', '1.1.1'),
+  ('version', '1.1.2'),
+  ('originalVersion', '1.1.2'),
   ('installDate', CURRENT_TIMESTAMP),
   ('updateDate', CURRENT_TIMESTAMP);
 
