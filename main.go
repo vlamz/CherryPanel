@@ -15,12 +15,32 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/pufferpanel/apufferi/config"
+	"github.com/pufferpanel/apufferi/logging"
+	"github.com/pufferpanel/pufferpanel/database"
 	"github.com/pufferpanel/pufferpanel/web"
+	"os"
 )
 
 func main() {
 	r := gin.Default()
 	web.RegisterRoutes(r)
+
+	configPath, exists := os.LookupEnv("PUFFERPANEL_CONFIG")
+
+	if !exists {
+		configPath = "config.json"
+	}
+
+	config.Load(configPath)
+
+	logging.Init()
+
+	err := database.Load()
+
+	if err != nil {
+		logging.Error("Error connecting to database", err)
+	}
 
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
