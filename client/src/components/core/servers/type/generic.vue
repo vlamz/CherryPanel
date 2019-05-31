@@ -20,6 +20,11 @@
         <core-servers-console v-bind:server="server"></core-servers-console>
       </b-col>
     </b-row>
+    <b-row>
+      <b-col>
+        <core-servers-controls></core-servers-controls>
+      </b-col>
+    </b-row>
   </b-container>
 </template>
 
@@ -30,7 +35,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-</style>
