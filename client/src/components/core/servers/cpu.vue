@@ -12,7 +12,12 @@
   -->
 
 <template>
-  <line-chart :chart-data="dataCollection" :options="options"></line-chart>
+  <b-card
+    header-tag="header"
+    footer-tag="footer">
+    <h6 slot="header" class="mb-0" v-text="$t('common.CPU')"></h6>
+    <line-chart :chart-data="datacollection" :options="options"></line-chart>
+  </b-card>
 </template>
 
 <script>
@@ -22,18 +27,19 @@ export default {
   components: {
     LineChart
   },
-  props: {
-    server: Object
-  },
   data () {
     return {
-      refreshInterval: null,
-      dataCollection: {
-        labels: [],
-        datasets: [{
-          label: 'CPU',
-          data: []
-        }]
+      maxPoints: 20,
+      cpu: Array.apply(null, Array(this.maxPoints)).map(Number.prototype.valueOf, 0),
+      label: Array.apply(null, Array(this.maxPoints)).map(String.prototype.valueOf, ''),
+      datacollection: {
+        datasets: [
+          {
+            label: this.$t('common.CPU'),
+            backgroundColor: '#65a5f8',
+            data: []
+          }
+        ]
       },
       options: {
         scales: {
@@ -42,19 +48,39 @@ export default {
               beginAtZero: true
             }
           }]
-        }
+        },
+        responsive: false,
+        animation: false
       }
     }
   },
   methods: {
     updateStats (data) {
-      this.dataCollection.labels.push(Date.now())
-      this.dataCollection.datasets[0].data.push(data.cpu)
-    },
-    sendStatRequest () {
-      this.updateStats({
-        cpu: Math.floor(Math.random() * (50 - 5 + 1)) + 5
-      })
+      if (this.cpu.length === this.maxPoints) {
+        this.cpu.shift()
+        this.label.shift()
+      }
+
+      this.label.push(new Date().toLocaleTimeString())
+      this.cpu.push(data.cpu)
+
+      let newCpu = []
+      let newLabel = []
+      for (let i = 0; i < this.cpu.length; i++) {
+        newCpu[i] = this.cpu[i]
+        newLabel[i] = this.label[i]
+      }
+
+      this.datacollection = {
+        labels: newLabel,
+        datasets: [
+          {
+            label: this.$t('common.CPU'),
+            backgroundColor: '#65a5f8',
+            data: newCpu
+          }
+        ]
+      }
     }
   },
   mounted () {
@@ -64,24 +90,10 @@ export default {
       if (data === 'undefined') {
         return
       }
-      if (data.type === 'stats') {
+      if (data.type === 'stat') {
         root.updateStats(data.data)
       }
     })
-
-    this.refreshInterval = setInterval(this.sendStatRequest, 5000)
-  },
-  beforeDestroy () {
-    if (this.refreshInterval !== null) {
-      clearInterval(this.refreshInterval)
-    }
   }
 }
 </script>
-
-<style>
-  .small {
-    max-width: 600px;
-    margin:  150px auto;
-  }
-</style>
