@@ -1,5 +1,6 @@
 <template>
   <v-text-field
+    ref="underlying"
     :id="id"
     :value="value"
     :outlined="lookValue === 'outlined'"
@@ -84,6 +85,11 @@ export default {
       // set hint to '_' if only the slot has content to force vuetify to
       // display the hint without needing to double define it everywhere
       return this.hint ? this.hint : this.$slots.message ? '_' : undefined
+    }
+  },
+  methods: {
+    focus () {
+      this.$refs.underlying.focus()
     }
   }
 }
