@@ -7,12 +7,14 @@ FROM pufferpanel/pufferpanel:${DOCKER_TAG}
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     apk update
 
-ENV JAVA_HOME=/usr/lib/jvm/java-16-openjdk
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
 # java
-RUN apk add --no-cache openjdk8 openjdk16 && \
-    ln -sfn /usr/lib/jvm/java-16-openjdk/bin/java /usr/bin/java && \
-    ln -sfn /usr/lib/jvm/java-16-openjdk/bin/javac /usr/bin/javac && \
+RUN apk add --no-cache openjdk8 openjdk16 openjdk17 && \
+    ln -sfn /usr/lib/jvm/java-17-openjdk/bin/java /usr/bin/java && \
+    ln -sfn /usr/lib/jvm/java-17-openjdk/bin/javac /usr/bin/javac && \
+    ln -sfn /usr/lib/jvm/java-17-openjdk/bin/java /usr/bin/java17 && \
+    ln -sfn /usr/lib/jvm/java-17-openjdk/bin/javac /usr/bin/javac17 && \
     ln -sfn /usr/lib/jvm/java-16-openjdk/bin/java /usr/bin/java16 && \
     ln -sfn /usr/lib/jvm/java-16-openjdk/bin/javac /usr/bin/javac16 && \
     ln -sfn /usr/lib/jvm/java-1.8-openjdk/bin/java /usr/bin/java8 && \
@@ -25,6 +27,10 @@ RUN apk add --no-cache openjdk8 openjdk16 && \
     javac16 -version && \
     echo "Testing Java 16 path" && \
     java16 -version && \
+    echo "Testing Javac 17 path" && \
+    javac17 -version && \
+    echo "Testing Java 17 path" && \
+    java17 -version && \
     echo "Testing java path" && \
     java -version && \
     echo "Testing javac path" && \
