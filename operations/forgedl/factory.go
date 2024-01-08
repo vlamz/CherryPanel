@@ -20,6 +20,10 @@ func (of OperationFactory) Create(op pufferpanel.CreateOperation) (pufferpanel.O
 		return nil, errors.New("missing version and minecraftVersion")
 	}
 
+	if outputVariable == "" {
+		outputVariable = "opForgeVersion"
+	}
+
 	return ForgeDl{Version: version, Filename: filename, MinecraftVersion: minecraftVersion, OutputVariable: outputVariable}, nil
 }
 
