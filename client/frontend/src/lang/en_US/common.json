@@ -61,5 +61,10 @@
   },
   "NoResults": "No Results",
   "Yes": "Yes",
-  "No": "No"
+  "No": "No",
+  "Dashboard": "Dashboard",
+  "navigation": {
+    "Main": "Menu",
+    "Admin": "Administration"
+  }
 }

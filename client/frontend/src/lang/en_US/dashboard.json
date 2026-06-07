@@ -1,0 +1,37 @@
+{
+  "SystemMonitor": "System Monitor",
+  "PerformanceHistory": "Performance History",
+  "StatsError": "Failed to get statistics",
+  "CollectingData": "Collecting data…",
+  "LiveDot": "Live",
+  "All": "All",
+  "Ungrouped": "Ungrouped",
+  "AddGroup": "Add Group",
+  "NewGroup": "New Group",
+  "GroupNamePlaceholder": "Group name…",
+  "Create": "Create",
+  "NoGroup": "No group",
+  "DeleteGroup": "Delete group",
+  "InstallingDots": "Installing…",
+  "Servers": "Servers",
+  "sort": {
+    "Label": "Sort by",
+    "ByStatus": "By status",
+    "ByName": "By name",
+    "ByPlayers": "By players",
+    "ByNode": "By node"
+  },
+  "range": {
+    "1h": "1 Hour",
+    "24h": "24 Hours",
+    "1w": "1 Week",
+    "1mo": "1 Month"
+  },
+  "settings": {
+    "Title": "Dashboard Settings",
+    "RefreshInterval": "Refresh interval",
+    "CpuCount": "Logical CPU count",
+    "CpuCountHint": "Cores × threads per core. Run 'lscpu' on your server and look for CPU(s).",
+    "Save": "Save"
+  }
+}

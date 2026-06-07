@@ -3,7 +3,7 @@ import { AnsiUp } from 'ansi_up'
 const decoder = new TextDecoder('utf-8')
 
 const ansiup = new AnsiUp()
-ansiup.ansi_to_html('\u001b[m')
+ansiup.ansi_to_html('[m')
 
 function handleCarriageReturn(line) {
   if (line.indexOf('\r') !== -1) {
@@ -14,7 +14,6 @@ function handleCarriageReturn(line) {
     })
     return result
   }
-
   return line
 }
 
@@ -22,12 +21,22 @@ function markDaemon(line, panelName) {
   if (line.trim().indexOf('[DAEMON]') === 0) {
     return `<span class="daemon-marker" data-name="${panelName}"></span>` + line.substring(8)
   }
-
   return line
 }
 
+// Linkify URLs in already-processed HTML — only matches bare text URLs, not inside tags/attrs
+function linkify(html) {
+  // Replace URLs that are NOT inside HTML tag attributes (not preceded by = or ")
+  return html.replace(/(?<![="'`])(https?:\/\/[^\s<>"']+)/g, (url) => {
+    // Clean trailing punctuation
+    const clean = url.replace(/[.,;:!?)]+$/, '')
+    const tail = url.slice(clean.length)
+    return `<span class="console-link" data-href="${clean}" title="Bağlantıyı aç: ${clean}">${clean}</span>${tail}`
+  })
+}
+
 function handleLine(line, panelName) {
-  return markDaemon(handleCarriageReturn(line), panelName)
+  return linkify(markDaemon(handleCarriageReturn(line), panelName))
 }
 
 function decode(lastIncomplete, b64) {
@@ -42,9 +51,9 @@ function decode(lastIncomplete, b64) {
   }
   let decoded = decoder.decode(bytes)
   let incomplete = new Uint8Array(0)
-  if (decoded.slice(-1) === '�') {
+  if (decoded.slice(-1) === '???') {
     for (let i = 0; i < 3; i++) {
-      if (decoder.decode(bytes.slice(i-3)) === '�') {
+      if (decoder.decode(bytes.slice(i-3)) === '???') {
         decoded = decoded.slice(0, -1)
         incomplete = bytes.slice(i-3)
         break
@@ -75,16 +84,13 @@ onmessage = function (e) {
     if (lastIncompleteLine) {
       updates.push({ op: 'update', content: handleLine(line, e.data.panelName) })
       if ((newLines.length - 1) === i && !endOnNewline) {
-        // this is the last line and it's not complete
         lastIncompleteLine = { line }
       } else {
-        // not the last line, must be complete
         lastIncompleteLine = null
       }
     } else {
       updates.push({ op: 'append', content: handleLine(line, e.data.panelName) })
       if ((newLines.length - 1) === i && !endOnNewline) {
-        // this is the last line and it's not complete
         lastIncompleteLine = { line }
       }
     }

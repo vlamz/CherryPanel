@@ -28,7 +28,7 @@
     "color": {
       "type": "color",
       "var": "--primary",
-      "default": "#07a7e3",
+      "default": "#A92331",
       "derive": [
         {
           "type": "contrast",
@@ -126,6 +126,21 @@
         {
           "value": "body{--standard-font:'Atkinson Hyperlegible Next', sans-serif;--headline-font:'Atkinson Hyperlegible Next', sans-serif;--monospace-font:'Atkinson Hyperlegible Mono', monospace}",
           "tkey": "common.theme.fontFace.A11y"
+        }
+      ]
+    },
+    "surfaceOverride": {
+      "type": "snippet",
+      "tkey": "common.theme.SurfaceOverride",
+      "options": [
+        {
+          "value": "",
+          "label": "Standard",
+          "default": true
+        },
+        {
+          "value": "#app{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}",
+          "label": "Dark Modern"
         }
       ]
     }
