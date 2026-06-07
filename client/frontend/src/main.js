@@ -78,13 +78,18 @@ async function mountApp(config) {
 apiClient
   .getConfig()
   .then(config => {
+    // If the backend still returns the default "PufferPanel" name,
+    // replace it with "CherryPanel". Admins who set a custom name keep theirs.
+    if (!config.branding?.name || config.branding.name === 'PufferPanel') {
+      config.branding = { ...(config.branding || {}), name: 'CherryPanel' }
+    }
     mountApp(config)
   })
   .catch(error => {
     console.log(error)
     mountApp({
       branding: {
-        name: 'PufferPanel'
+        name: 'CherryPanel'
       },
       themes: {
         active: 'PufferPanel',
