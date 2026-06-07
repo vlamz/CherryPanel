@@ -30,6 +30,17 @@ export default (api) => [
     }
   },
   {
+    path: '/dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    name: 'Dashboard',
+    meta: {
+      tkey: 'common.Dashboard',
+      permission: true,
+      icon: 'dashboard',
+      hotkey: 'g h'
+    }
+  },
+  {
     path: '/servers',
     component: () => import('@/views/ServerList.vue'),
     name: 'ServerList',

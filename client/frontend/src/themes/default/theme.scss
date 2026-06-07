@@ -1739,10 +1739,21 @@ html[dir="rtl"] .settings .panel .master-url .icon {
   overflow-y: auto;
   display: flex;
   flex-direction: column-reverse;
-  background-color: #000;
-  padding: 0.5em;
-  height: calc(100vh - 64px - 19em);
+  background-color: #0d1117;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.75em 0.25em 0.75em 0.75em;
+  height: calc(100vh - 64px - 19rem);
   position: relative;
+  font-size: 12.5px; /* default — overridden by inline style from Console.vue */
+
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+  &::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 }
 
 @include high-contrast-mode {
@@ -1751,19 +1762,102 @@ html[dir="rtl"] .settings .panel .master-url .icon {
   }
 }
 
-.console div, .console div span {
-  color: #fff;
+.console div {
   font-family: var(--monospace-font);
-  word-break: break-all;
+  font-size: inherit; /* inherits from .console-wrapper which the Vue component overrides via inline style */
+  line-height: 1.65;
+  padding: 1px 6px 1px 4px;
+  border-radius: 4px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  transition: background 0.1s;
+
+  &:hover {
+    background: rgba(255,255,255,0.035);
+  }
+}
+
+.console div, .console div span {
+  color: #cdd9e5;
+}
+
+/* Soften pure white to avoid harsh glare */
+.console div span[style*="color: rgb(255, 255, 255)"],
+.console div span[style*="color:rgb(255,255,255)"],
+.console div span[style*="color: white"] {
+  color: #cdd9e5 !important;
+}
+
+/* Tone down saturated greens — make them softer */
+.console div span[style*="color: rgb(0, 187, 0)"] {
+  color: #4ade80 !important;
+}
+
+/* Tone down saturated yellows */
+.console div span[style*="color: rgb(187, 187, 0)"] {
+  color: #fbbf24 !important;
+}
+
+/* Tone down red */
+.console div span[style*="color: rgb(187, 0, 0)"] {
+  color: #f87171 !important;
+}
+
+/* Tone down blue */
+.console div span[style*="color: rgb(0, 0, 187)"] {
+  color: #60a5fa !important;
+}
+
+/* Cyan */
+.console div span[style*="color: rgb(0, 187, 187)"] {
+  color: #67e8f9 !important;
+}
+
+/* Magenta */
+.console div span[style*="color: rgb(187, 0, 187)"] {
+  color: #c084fc !important;
+}
+
+/* Bold mode — activated by .console--bold class on the wrapper */
+.console-wrapper.console--bold .console div,
+.console-wrapper.console--bold .console div span {
+  font-weight: 700;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clickable links inside console */
+.console .console-link {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-decoration-color: rgba(96,165,250,0.4);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.12s, background 0.12s;
+
+  &:hover {
+    color: #93c5fd;
+    background: rgba(96,165,250,0.1);
+    text-decoration-color: rgba(96,165,250,0.7);
+  }
 }
 
 .console .daemon-marker::before {
-  background-color: #eee;
-  color: #000;
-  border-radius: 0.5em;
-  padding-left: 0.5ch;
-  padding-right: 0.5ch;
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border-radius: 4px;
+  padding: 0 0.45em;
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   content: attr(data-name);
+  margin-right: 0.4em;
+  vertical-align: middle;
+  line-height: 1.6;
+  opacity: 0.9;
 }
 
 #console .input-field-wrapper .input-field {
@@ -1771,28 +1865,53 @@ html[dir="rtl"] .settings .panel .master-url .icon {
 }
 
 #console {
-  position:relative;
-  .icon-clear-console::before {
-    color: #fff;
-    position: absolute;
-    top: 0.75em;
-    right: 0.75em;
-    font-size: 1.5em;
-    background-color: #000;
-    z-index: 1;
-    @include clickable;
-  }
+  position: relative;
 
   .command {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 0.6em;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 8px;
+    padding: 0.3em 0.75em 0.3em 0.75em;
+    transition: border-color 0.15s;
+
+    &:focus-within {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
     .input-field-wrapper {
       display: inline-block;
       width: calc(100% - 3em);
+
+      .input-field {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #cdd9e5 !important;
+        font-family: var(--monospace-font);
+        font-size: 13px;
+      }
+
+      label {
+        color: rgba(205, 217, 229, 0.4) !important;
+        font-family: var(--monospace-font);
+        font-size: 13px;
+      }
     }
+
     .icon-send {
-      margin-left: 0.5em;
-      font-size: 2em;
+      margin-left: 0.25em;
+      font-size: 1.6em;
+      color: rgba(99, 102, 241, 0.7);
       vertical-align: middle;
+      transition: color 0.15s;
       @include clickable;
+      &:hover { color: rgb(99, 102, 241); }
+      &::before { color: inherit; }
     }
   }
 }

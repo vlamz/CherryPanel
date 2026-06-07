@@ -53,4 +53,9 @@ export class NodeApi {
     await this._api.delete(`/api/nodes/${id}`)
     return true
   }
+
+  async getSystemStats() {
+    const res = await this._api.get('/api/nodes/system')
+    return res.data
+  }
 }
