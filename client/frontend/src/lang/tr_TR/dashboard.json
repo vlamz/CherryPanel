@@ -1,0 +1,37 @@
+{
+  "SystemMonitor": "Sistem Monitörü",
+  "PerformanceHistory": "Performans Geçmişi",
+  "StatsError": "İstatistikler alınamadı",
+  "CollectingData": "Veri toplanıyor…",
+  "LiveDot": "Canlı",
+  "All": "Tümü",
+  "Ungrouped": "Grupsuz",
+  "AddGroup": "Grup Ekle",
+  "NewGroup": "Yeni Grup",
+  "GroupNamePlaceholder": "Grup adı…",
+  "Create": "Oluştur",
+  "NoGroup": "Grup yok",
+  "DeleteGroup": "Grubu sil",
+  "InstallingDots": "Kuruluyor…",
+  "Servers": "Sunucu",
+  "sort": {
+    "Label": "Sıralama",
+    "ByStatus": "Duruma göre",
+    "ByName": "İsme göre",
+    "ByPlayers": "Oyuncu sayısına göre",
+    "ByNode": "Node'a göre"
+  },
+  "range": {
+    "1h": "1 Saat",
+    "24h": "24 Saat",
+    "1w": "1 Hafta",
+    "1mo": "1 Ay"
+  },
+  "settings": {
+    "Title": "Dashboard Ayarları",
+    "RefreshInterval": "Yenileme aralığı",
+    "CpuCount": "Mantıksal CPU sayısı",
+    "CpuCountHint": "Çekirdek × thread sayısı. Sunucuda 'lscpu' çalıştırıp CPU(s) satırına bakın.",
+    "Save": "Kaydet"
+  }
+}
