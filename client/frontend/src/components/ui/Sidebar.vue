@@ -13,10 +13,24 @@ const api = inject('api')
 const events = inject('events')
 const { t } = useI18n()
 const router = useRouter()
-const routes = router.getRoutes().filter(e => {
-  if (e.meta.permission === true) return true
-  return e.meta.permission && api.auth.isLoggedIn() && api.auth.hasScope(e.meta.permission)
-})
+
+// Get scopes directly without relying on isLoggedIn()
+// (ServerCookieSessionStore uses httpOnly token so isLoggedIn() may be false
+// even when authenticated via server-side session cookie)
+const userScopes = api.auth.getScopes()
+const isAdmin = userScopes.includes('admin')
+
+function canSeeRoute(permission) {
+  if (permission === true) return true
+  if (!permission) return false
+  return isAdmin || userScopes.includes(permission)
+}
+
+const allRoutes = router.getRoutes().filter(e => e.meta.permission && canSeeRoute(e.meta.permission))
+
+// Split into "general" (permission: true) and "admin" (specific scope) groups
+const generalRoutes = allRoutes.filter(e => e.meta.permission === true)
+const adminRoutes = allRoutes.filter(e => e.meta.permission !== true)
 
 const mini = ref(localStorage.getItem('sidebar.mini') === 'true')
 
@@ -36,8 +50,11 @@ function toggleMini() {
   <nav :class="['sidebar', props.right ? 'right' : 'left', mini ? 'mini' : '', closed ? 'closed' : 'open']">
     <div tabindex="-1" class="sidebar-content-top">
       <list>
+        <li v-if="generalRoutes.length" class="sidebar-section-label">
+          <span>{{ mini ? '' : t('common.navigation.Main') }}</span>
+        </li>
         <list-item
-          v-for="route in routes"
+          v-for="route in generalRoutes"
           :key="route.name"
           v-hotkey="route.meta.hotkey"
           :to="route"
@@ -45,6 +62,21 @@ function toggleMini() {
           <list-item-icon v-if="route.meta.icon" :icon="route.meta.icon" />
           <list-item-content v-text="t(route.meta.tkey ? route.meta.tkey : 'common.navigation.' + route.name)" />
         </list-item>
+
+        <template v-if="adminRoutes.length">
+          <li class="sidebar-section-label sidebar-section-divider">
+            <span>{{ mini ? '' : t('common.navigation.Admin') }}</span>
+          </li>
+          <list-item
+            v-for="route in adminRoutes"
+            :key="route.name"
+            v-hotkey="route.meta.hotkey"
+            :to="route"
+          >
+            <list-item-icon v-if="route.meta.icon" :icon="route.meta.icon" />
+            <list-item-content v-text="t(route.meta.tkey ? route.meta.tkey : 'common.navigation.' + route.name)" />
+          </list-item>
+        </template>
       </list>
     </div>
     <div tabindex="-1" class="sidebar-content-bottom">

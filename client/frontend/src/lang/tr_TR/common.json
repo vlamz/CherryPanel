@@ -61,5 +61,10 @@
   },
   "NoResults": "Sonuç Bulunamadı",
   "Yes": "Evet",
-  "No": "Hayır"
+  "No": "Hayır",
+  "Dashboard": "Ana Sayfa",
+  "navigation": {
+    "Main": "Menü",
+    "Admin": "Yönetim"
+  }
 }

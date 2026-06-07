@@ -6624,6 +6624,9 @@ $mdi-icons: (
 .icon-template {
   @include icon-name(file-code);
 }
+.icon-dashboard {
+  @include icon-name(view-dashboard);
+}
 .icon-email {
   @include icon-name(email);
 }
@@ -6662,6 +6665,24 @@ $mdi-icons: (
 }
 .icon-plus {
   @include icon-name(plus);
+}
+.icon-alert {
+  @include icon-name(alert);
+}
+.icon-sort {
+  @include icon-name(sort-variant);
+}
+.icon-monitor {
+  @include icon-name(monitor);
+}
+.icon-layers {
+  @include icon-name(layers-triple);
+}
+.icon-check {
+  @include icon-name(check);
+}
+.icon-dots-vertical {
+  @include icon-name(dots-vertical);
 }
 .icon-clear-console {
   @include icon-name(text-box-remove);

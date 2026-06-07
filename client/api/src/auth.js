@@ -116,14 +116,18 @@ export class AuthApi {
     return this._sessionStore.isLoggedIn()
   }
 
+  getScopes() {
+    return this._sessionStore.getScopes() || []
+  }
+
   hasScope(scope) {
-    if (!this.isLoggedIn()) return false
-    const scopes = this._sessionStore.getScopes()
-    if (scopes !== null) {
-      if (scopes.indexOf(scope) !== -1) return true
-      return scopes.indexOf('admin') !== -1
-    }
-    return false
+    // Check scopes directly without requiring isLoggedIn()
+    // (ServerCookieSessionStore uses httpOnly token so isLoggedIn() may return false
+    // even when the user is authenticated via server-side session)
+    const scopes = this.getScopes()
+    if (scopes.length === 0) return false
+    if (scopes.indexOf(scope) !== -1) return true
+    return scopes.indexOf('admin') !== -1
   }
 
   async logout() {

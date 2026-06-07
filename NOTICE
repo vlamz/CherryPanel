@@ -1,0 +1,19 @@
+CherryPanel
+Copyright 2026 Alperen (vlamz)
+
+This product is based on PufferPanel (https://github.com/pufferpanel/pufferpanel),
+Copyright 2025 PufferPanel, licensed under the Apache License, Version 2.0.
+
+The following files were added or modified by the CherryPanel contributors:
+  - client/frontend/src/views/Dashboard.vue
+  - client/frontend/src/components/server/PlayerCount.vue
+  - client/frontend/src/utils/consolePlayerParser.js
+  - client/frontend/src/lang/en_US/dashboard.json
+  - client/frontend/src/lang/tr_TR/dashboard.json
+  - client/frontend/src/plugins/i18n.js
+  - client/frontend/src/themes/default/manifest.json
+  - client/frontend/index.html
+  - client/frontend/public/favicon.png
+  - client/frontend/public/favicon.ico
+
+A copy of the Apache License 2.0 is available in the LICENSE file.
