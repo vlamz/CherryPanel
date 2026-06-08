@@ -257,16 +257,12 @@ async function connectForPlayerCount(serverId) {
     const server = await api.server.get(serverId)
     // Initialize counter to 0 for ALL game types immediately so the widget
     // is visible on the card even before a join/leave/list event arrives.
-    // (For Minecraft, getQuery may update it; for others, real-time events will.)
     if (!playerCounts.value[serverId]) {
       playerCounts.value = { ...playerCounts.value, [serverId]: { current: 0, max: 0 } }
     }
-    // For Minecraft, send 'list' to get current players right away.
-    // Non-Minecraft servers don't support 'list', so we skip it.
     const isMc = !serverType || serverType.startsWith('minecraft')
-    if (isMc && server.hasScope && server.hasScope('server.console.send')) {
-      server.sendCommand('list')
-    }
+    // Register the console event handler FIRST, then send 'list'.
+    // If we send the command before registering, we risk missing the response.
     const unbind = server.on('console', (data) => {
       if (!data?.logs?.length) return
       const text = decodeLogs(data.logs)
@@ -284,6 +280,11 @@ async function connectForPlayerCount(serverId) {
       }
     })
     serverConnections.set(serverId, { server, unbind })
+    // For Minecraft, send 'list' AFTER the handler is ready to capture the response.
+    // Non-Minecraft servers don't support 'list' — their max comes from fetchAllMemoryMaxes().
+    if (isMc && server.hasScope && server.hasScope('server.console.send')) {
+      server.sendCommand('list')
+    }
   } catch { /* permission denied or server unavailable */ }
 }
 
@@ -342,6 +343,20 @@ async function fetchAllMemoryMaxes() {
         const memMB = def?.data?.memory?.value ?? null
         if (memMB && memMB > 0) {
           serverMemoryMax.value[s.id] = memMB * 1024 * 1024
+        }
+        // For non-Minecraft servers, read max player slots from definition.
+        // Common variable names across PufferPanel templates:
+        const isMc = !s.type || s.type.startsWith('minecraft')
+        if (!isMc) {
+          const maxSlots =
+            def?.data?.maxplayers?.value ??
+            def?.data?.['max-players']?.value ??
+            def?.data?.slots?.value ??
+            null
+          if (maxSlots && maxSlots > 0) {
+            const cur = playerCounts.value[s.id] || { current: 0, max: 0 }
+            playerCounts.value = { ...playerCounts.value, [s.id]: { current: cur.current, max: Number(maxSlots) } }
+          }
         }
         memMaxFetched.add(s.id)
       } catch { /* permission denied — try again next cycle */ }
