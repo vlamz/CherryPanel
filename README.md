@@ -22,10 +22,12 @@
   <tr>
     <td align="center"><b>Dashboard</b></td>
     <td align="center"><b>Server Console</b></td>
+    <td align="center"><b>Login</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/dashboard.png" alt="CherryPanel Dashboard — real-time player count, performance chart, server cards" /></td>
-    <td><img src="screenshots/login_email.png" alt="CherryPanel Login" /></td>
+    <td><img src="screenshots/console.png" alt="CherryPanel Console — player count widget, start/stop/kill buttons" /></td>
+    <td><img src="screenshots/login.png" alt="CherryPanel Login page" /></td>
   </tr>
 </table>
 
@@ -205,7 +207,8 @@ client/frontend/src/
     └── manifest.json              # Default mode: dark, color: #A92331
 screenshots/
 ├── dashboard.png                  # Dashboard with player counts and performance chart
-└── login_email.png                # Login page
+├── console.png                    # Server console with player count widget and action buttons
+└── login.png                      # Login page
 ```
 
 ---
