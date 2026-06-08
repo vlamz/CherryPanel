@@ -1,15 +1,26 @@
 /**
- * Shared Minecraft console player event parser.
- * Used by both PlayerCount.vue (Console tab) and Dashboard.vue.
+ * Shared multi-game console player event parser.
+ * Used by Dashboard.vue (real-time WebSocket) and PlayerCount.vue (Console tab).
  *
- * SECURITY: Regexes are anchored to the start of the line and require
- * the INFO log prefix so that player chat messages cannot be used to
- * spoof join/leave events (e.g. typing "]: Vlam_ joined the game").
+ * SECURITY (Minecraft):
+ *   Regexes are anchored to the start of the line and require the INFO log prefix
+ *   so that player chat messages cannot spoof join/leave events.
+ *   e.g. typing "]: Vlam_ joined the game" in chat is blocked by [^\]]* after INFO.
+ *   Valid MC usernames: [a-zA-Z0-9_] 2-16 chars; chat prefixes with '<' which is excluded.
  *
- * Valid Minecraft usernames: [a-zA-Z0-9_], 2-16 chars.
- * Chat format is always:  [time INFO]: <Name> message
- *   → name starts with '<', excluded by [a-zA-Z0-9_] group.
- * Using [^\]]* after INFO prevents skipping to a fake ]: inside chat text.
+ * Other games use a "try-all-patterns" approach — Minecraft's strict security is not
+ * needed there because console injection is far less of a concern on those servers.
+ *
+ * Supported games / server types:
+ *   minecraft / minecraft-java / minecraft-bedrock  → _parseMinecraft  (strict, anchored)
+ *   srcds  → Source Engine (CS:GO, TF2, GMod), Unturned, Rust, DST, 7D2D, ARK, Squad, ...
+ *   terraria  → TShock / Vanilla / tModLoader
+ *   factorio  → Factorio
+ *   valheim   → Valheim
+ *   zomboid   → Project Zomboid
+ *   eco       → Eco
+ *   custom    → Vintage Story (and any other custom runner)
+ *   (fallback) → generic case-insensitive "joined/connected" pattern
  */
 
 const textDecoder = new TextDecoder('utf-8')
@@ -17,12 +28,152 @@ const textDecoder = new TextDecoder('utf-8')
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /\x1b\[[0-9;]*m/g
 
-// Secure join/leave: line must start with timestamp bracket and contain INFO
-// Format: [time INFO]: PlayerName action   (Paper/Purpur/Spigot)
-//      or [time] [thread/INFO]: PlayerName action  (Vanilla)
-const JOIN_RE = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) joined the game/
-const QUIT_RE = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) (?:left the game|lost connection)/
-const LIST_RE = /There are (\d+) of a max of (\d+) players online(?:: (.+))?/
+// ─── Minecraft (strict, anchored) ────────────────────────────────────────────
+const MC_JOIN = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) joined the game/
+const MC_QUIT = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) (?:left the game|lost connection)/
+const MC_LIST = /There are (\d+) of a max of (\d+) players online(?:: (.+))?/
+
+function _parseMinecraft(line) {
+  let m
+  if ((m = line.match(MC_JOIN))) return { type: 'join', name: m[1] }
+  if ((m = line.match(MC_QUIT))) return { type: 'leave', name: m[1] }
+  if ((m = line.match(MC_LIST))) {
+    return {
+      type: 'list',
+      max: parseInt(m[2]),
+      names: m[3] ? m[3].split(',').map(s => s.trim()).filter(Boolean) : []
+    }
+  }
+  return null
+}
+
+// ─── Non-Minecraft: ordered pattern list ─────────────────────────────────────
+//
+// Each entry: { joinRe, quitRe, joinGroup?, quitGroup? }
+// joinGroup/quitGroup default to 1 (first capture group = player name).
+//
+// Patterns are tried in order; first match wins.
+
+const NON_MC_PATTERNS = [
+  // ── Source Engine (CS:GO, TF2, Garry's Mod, Arma 3 w/ RCON logging) ──────
+  // Log line: L mm/dd/yyyy - HH:MM:SS: "Name<uid><STEAM_X:X:X><>" connected, address "ip:port"
+  // Log line: L mm/dd/yyyy - HH:MM:SS: "Name<uid><STEAM_X:X:X><team>" disconnected (reason "")
+  {
+    joinRe: /"([^"<]+)<\d+><[A-Z_0-9:]+><[^"]*>"\s+connected,\s+address/,
+    quitRe: /"([^"<]+)<\d+><[A-Z_0-9:]+><[^"]*>"\s+disconnected/,
+  },
+
+  // ── Unturned ──────────────────────────────────────────────────────────────
+  // [04/01/2024 20:00:00] Player "Name" has connected
+  // [04/01/2024 20:00:00] Player "Name" has disconnected
+  {
+    joinRe: /Player\s+"([^"]+)"\s+has\s+connected/i,
+    quitRe: /Player\s+"([^"]+)"\s+has\s+disconnected/i,
+  },
+
+  // ── Rust ─────────────────────────────────────────────────────────────────
+  // [JOIN] Name (76561198xxxxxxxxx)
+  // [LEAVE] Name (76561198xxxxxxxxx)
+  // Also older format: Name[76561198.../IP:PORT] joined [IP]
+  {
+    joinRe: /\[JOIN\]\s+(.+?)\s+\(/,
+    quitRe: /\[LEAVE\]\s+(.+?)\s+\(/,
+  },
+  {
+    joinRe: /^(.+?)\[\d{17}\/[^\]]+\]\s+joined\s+\[/,
+    quitRe: /^(.+?)\[\d{17}\]\s+disconnecting:/,
+  },
+
+  // ── Don't Starve Together ─────────────────────────────────────────────────
+  // [00:00:00]: [Join Announcement] Name
+  // [00:00:00]: [Leave Announcement] Name
+  {
+    joinRe: /\[Join Announcement\]\s+(.+)/,
+    quitRe: /\[Leave Announcement\]\s+(.+)/,
+  },
+
+  // ── ARK: Survival Evolved ─────────────────────────────────────────────────
+  // 2024.01.01_00.00.00: Name joined this ARK!
+  // 2024.01.01_00.00.00: Name left this ARK!
+  {
+    joinRe: /:\s+(.+?)\s+joined this ARK!/,
+    quitRe: /:\s+(.+?)\s+left this ARK!/,
+  },
+
+  // ── 7 Days to Die ─────────────────────────────────────────────────────────
+  // 2024-01-01T00:00:00 0.000 INF GMSG: Player 'Name' joined the game
+  // 2024-01-01T00:00:00 0.000 INF GMSG: Player 'Name' left the game
+  {
+    joinRe: /GMSG:\s+Player\s+'([^']+)'\s+joined the game/,
+    quitRe: /GMSG:\s+Player\s+'([^']+)'\s+left the game/,
+  },
+
+  // ── Terraria (TShock / Vanilla / tModLoader) ──────────────────────────────
+  // [Server] Name has joined.
+  // Name has left.
+  {
+    joinRe: /(?:\[Server\]\s+)?(.+?)\s+has joined\./,
+    quitRe: /(.+?)\s+has left\./,
+  },
+
+  // ── Factorio ──────────────────────────────────────────────────────────────
+  // 2024-01-01 00:00:00 [JOIN] Name joined the game
+  // 2024-01-01 00:00:00 [LEAVE] Name left the game
+  {
+    joinRe: /\[JOIN\]\s+(.+?)\s+joined the game/,
+    quitRe: /\[LEAVE\]\s+(.+?)\s+left the game/,
+  },
+
+  // ── Valheim ───────────────────────────────────────────────────────────────
+  // 01/01/2024 00:00:00: Got character ZDOID from Name : 12345
+  // (leave is tracked via ZDOID ID — name stored in join, matched on disconnect)
+  {
+    joinRe: /Got character ZDOID from (.+?) :/,
+    quitRe: null,  // handled separately below via ZDOID tracking
+  },
+
+  // ── Project Zomboid ───────────────────────────────────────────────────────
+  // [2024-01-01T00:00:00.000] PlayerConnect: Name, steamID: 12345
+  // [2024-01-01T00:00:00.000] Disconnect: Name
+  {
+    joinRe: /PlayerConnect:\s+([^,]+),/,
+    quitRe: /Disconnect:\s+(.+)/,
+  },
+
+  // ── Eco ───────────────────────────────────────────────────────────────────
+  // [INFO] Name entered the world.
+  // [INFO] Name has left the world.
+  {
+    joinRe: /\[INFO\]\s+(.+?)\s+entered the world\./,
+    quitRe: /\[INFO\]\s+(.+?)\s+has left the world\./,
+  },
+
+  // ── Vintage Story (custom runner) ─────────────────────────────────────────
+  // [Server Event] Player Name joined.
+  // [Server Event] Player Name left.
+  {
+    joinRe: /\[Server Event\]\s+Player\s+(.+?)\s+joined\./,
+    quitRe: /\[Server Event\]\s+Player\s+(.+?)\s+left\./,
+  },
+
+  // ── Generic fallback ──────────────────────────────────────────────────────
+  // Catches "player Name connected/joined" patterns case-insensitively
+  {
+    joinRe: /(?:player|client)[:\s]+"?(\w[\w ]{1,30})"?\s+(?:joined|connected)/i,
+    quitRe: /(?:player|client)[:\s]+"?(\w[\w ]{1,30})"?\s+(?:left|disconnected)/i,
+  },
+]
+
+function _parseNonMinecraft(line) {
+  for (const { joinRe, quitRe } of NON_MC_PATTERNS) {
+    let m
+    if (joinRe && (m = line.match(joinRe))) return { type: 'join', name: m[1].trim() }
+    if (quitRe && (m = line.match(quitRe))) return { type: 'leave', name: m[1].trim() }
+  }
+  return null
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 export function decodeLogs(logs) {
   try {
@@ -31,22 +182,42 @@ export function decodeLogs(logs) {
     const bytes = new Uint8Array(bin.length)
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
     return textDecoder.decode(bytes)
-  } catch {
+  } catch (_) {
     return ''
   }
 }
 
-export function parseConsoleLine(raw) {
+/**
+ * Parse a single console line for player join/leave/list events.
+ * @param {string} raw       - Raw console line (may contain ANSI codes)
+ * @param {string} serverType - PufferPanel server type (e.g. 'minecraft', 'srcds', 'terraria')
+ * @returns {{ type: 'join'|'leave'|'list', name?: string, max?: number, names?: string[] } | null}
+ */
+export function parseConsoleLine(raw, serverType = 'minecraft') {
   const line = raw.replace(ANSI_RE, '').replace(/\r/g, '')
-  let m
-  if ((m = line.match(JOIN_RE))) return { type: 'join', name: m[1] }
-  if ((m = line.match(QUIT_RE))) return { type: 'leave', name: m[1] }
-  if ((m = line.match(LIST_RE))) {
-    return {
-      type: 'list',
-      max: parseInt(m[2]),
-      names: m[3] ? m[3].split(',').map(s => s.trim()).filter(Boolean) : []
-    }
+  if (!serverType || serverType.startsWith('minecraft')) {
+    return _parseMinecraft(line)
   }
-  return null
+  return _parseNonMinecraft(line)
+}
+
+/**
+ * Returns the kick/ban console command template for a given server type.
+ * Use {name} as the placeholder for the player name.
+ * Returns null if kick/ban is not supported for that server type.
+ *
+ * @param {string} serverType
+ * @returns {{ kick: string|null, ban: string|null } | null}
+ */
+export function getCommandTemplate(serverType) {
+  if (!serverType) return null
+  if (serverType.startsWith('minecraft')) return { kick: 'kick {name}',        ban: 'ban {name}' }
+  if (serverType === 'terraria')          return { kick: '/kick {name}',        ban: '/ban {name}' }
+  if (serverType === 'factorio')          return { kick: '/kick {name}',        ban: null }
+  if (serverType === 'zomboid')           return { kick: 'kickuser "{name}"',   ban: 'banuser "{name}"' }
+  if (serverType === 'eco')               return { kick: '/kick {name}',        ban: '/ban {name}' }
+  if (serverType === 'custom')            return { kick: '/kick {name}',        ban: null }  // vintage-story
+  if (serverType === 'valheim')           return null                                         // no console kick
+  if (serverType === 'srcds')             return { kick: 'kick "{name}"',       ban: null }  // best-effort
+  return { kick: 'kick {name}', ban: null }  // generic fallback
 }
