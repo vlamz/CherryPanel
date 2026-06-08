@@ -255,6 +255,13 @@ async function connectForPlayerCount(serverId) {
   const serverType = servers.value.find(s => s.id === serverId)?.type || 'minecraft'
   try {
     const server = await api.server.get(serverId)
+    // Non-Minecraft servers can't be queried via 'list' command, so initialize
+    // the counter to 0 right away — it will update as join/leave events arrive.
+    if (serverType && !serverType.startsWith('minecraft')) {
+      if (!playerCounts.value[serverId]) {
+        playerCounts.value = { ...playerCounts.value, [serverId]: { current: 0, max: 0 } }
+      }
+    }
     const unbind = server.on('console', (data) => {
       if (!data?.logs?.length) return
       const text = decodeLogs(data.logs)
@@ -644,7 +651,7 @@ onUnmounted(() => {
         </div>
 
         <div v-if="playerCounts[server.id]" class="sc__players">
-          &#x1F464; {{ playerCounts[server.id].current }}/{{ playerCounts[server.id].max }}
+          &#x1F464; {{ playerCounts[server.id].current }}<template v-if="playerCounts[server.id].max > 0">/{{ playerCounts[server.id].max }}</template>
         </div>
 
         <template v-if="server.online === 'online' && serverStats[server.id]">

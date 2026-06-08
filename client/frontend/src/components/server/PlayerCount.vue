@@ -38,9 +38,13 @@ let unbind = null
 
 onMounted(() => {
   unbind = props.server.on('console', handleConsoleEvent)
-  if (props.server.hasScope('server.console.send')) {
+  const isMc = !props.server.type || props.server.type.startsWith('minecraft')
+  if (isMc && props.server.hasScope('server.console.send')) {
+    // Only Minecraft supports the 'list' command; we wait for its response
+    // to populate initial player count. Other games can't be queried this way.
     props.server.sendCommand('list')
   } else {
+    // Non-Minecraft servers: show 0 immediately, update in real-time via console events
     loading.value = false
   }
   document.addEventListener('mousedown', onOutsideClick)
