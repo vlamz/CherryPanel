@@ -31,7 +31,7 @@ const ANSI_RE = /\x1b\[[0-9;]*m/g
 // ─── Minecraft (strict, anchored) ────────────────────────────────────────────
 const MC_JOIN = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) joined the game/
 const MC_QUIT = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) (?:left the game|lost connection)/
-const MC_LIST = /There are (\d+) of a max of (\d+) players online(?:: (.+))?/
+const MC_LIST = /There are (\d+) (?:of a max of|out of maximum) (\d+) players online[.:]?\s*(?:(.+))?/
 
 function _parseMinecraft(line) {
   let m
