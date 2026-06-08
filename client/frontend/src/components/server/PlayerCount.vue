@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { decodeLogs, parseConsoleLine, getCommandTemplate } from '@/utils/consolePlayerParser.js'
 
 const props = defineProps({
   server: { type: Object, required: true }
 })
+
+const { t } = useI18n()
 
 const players    = ref([])
 const maxPlayers = ref(0)
@@ -77,7 +80,7 @@ function ban(name) {
     <button
       class="pc-btn"
       :class="{ 'pc-btn--active': open }"
-      title="Online oyuncular"
+      :title="t('servers.PlayersOnline')"
       @click="open = !open">
       <span class="pc-icon">&#x1F464;</span>
       <span v-if="loading" class="pc-count pc-count--loading">&middot;&middot;&middot;</span>
@@ -88,19 +91,19 @@ function ban(name) {
 
     <div v-if="open" class="pc-panel">
       <div class="pc-panel__header">
-        <span>Online Oyuncular</span>
+        <span>{{ t('servers.PlayersOnline') }}</span>
         <span class="pc-panel__sub">
           {{ players.length }}<span v-if="maxPlayers > 0">/{{ maxPlayers }}</span>
         </span>
       </div>
-      <div v-if="loading" class="pc-panel__empty">Yükleniyor&hellip;</div>
-      <div v-else-if="players.length === 0" class="pc-panel__empty">Şu an kimse yok</div>
+      <div v-if="loading" class="pc-panel__empty">{{ t('servers.PlayersLoading') }}</div>
+      <div v-else-if="players.length === 0" class="pc-panel__empty">{{ t('servers.PlayersEmpty') }}</div>
       <ul v-else class="pc-panel__list">
         <li v-for="p in players" :key="p" class="pc-panel__row">
           <span class="pc-panel__name">{{ p }}</span>
           <div class="pc-panel__actions">
-            <button v-if="cmdTpl?.kick" class="pc-action pc-action--kick" @click="kick(p)">Kick</button>
-            <button v-if="cmdTpl?.ban" class="pc-action pc-action--ban" @click="ban(p)">Ban</button>
+            <button v-if="cmdTpl?.kick" class="pc-action pc-action--kick" @click="kick(p)">{{ t('servers.Kick') }}</button>
+            <button v-if="cmdTpl?.ban" class="pc-action pc-action--ban" @click="ban(p)">{{ t('servers.Ban') }}</button>
           </div>
         </li>
       </ul>
