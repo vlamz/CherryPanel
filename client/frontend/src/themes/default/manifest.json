@@ -8,8 +8,7 @@
       "options": [
         {
           "value": "mode-auto",
-          "tkey": "common.theme.mode.Auto",
-          "default": true
+          "tkey": "common.theme.mode.Auto"
         },
         {
           "value": "mode-light",
@@ -17,7 +16,8 @@
         },
         {
           "value": "mode-dark",
-          "tkey": "common.theme.mode.Dark"
+          "tkey": "common.theme.mode.Dark",
+          "default": true
         },
         {
           "value": "mode-dark-highcontrast",
