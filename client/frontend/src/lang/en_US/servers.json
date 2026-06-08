@@ -58,5 +58,10 @@
   "IncompatibleArch": "Incompatible with architecture '{arch}'",
   "IncompatibleOs": "Incompatible with OS '{os}'",
   "IncompatibleEnv": "Incompatible with environment '{env}'",
-  "AdvancedSettings": "Advanced Settings"
+  "AdvancedSettings": "Advanced Settings",
+  "PlayersOnline": "Online Players",
+  "PlayersLoading": "Loading…",
+  "PlayersEmpty": "Nobody online",
+  "Kick": "Kick",
+  "Ban": "Ban"
 }

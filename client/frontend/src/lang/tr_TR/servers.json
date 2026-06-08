@@ -58,5 +58,10 @@
   "IncompatibleArch": "Incompatible with architecture '{arch}'",
   "IncompatibleOs": "Incompatible with OS '{os}'",
   "IncompatibleEnv": "Incompatible with environment '{env}'",
-  "AdvancedSettings": "Advanced Settings"
+  "AdvancedSettings": "Advanced Settings",
+  "PlayersOnline": "Online Oyuncular",
+  "PlayersLoading": "Yükleniyor…",
+  "PlayersEmpty": "Şu an kimse yok",
+  "Kick": "Kick",
+  "Ban": "Ban"
 }
