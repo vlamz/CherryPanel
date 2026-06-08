@@ -3,10 +3,12 @@
  * Used by Dashboard.vue (real-time WebSocket) and PlayerCount.vue (Console tab).
  *
  * SECURITY (Minecraft):
- *   Regexes are anchored to the start of the line and require the INFO log prefix
- *   so that player chat messages cannot spoof join/leave events.
- *   e.g. typing "]: Vlam_ joined the game" in chat is blocked by [^\]]* after INFO.
- *   Valid MC usernames: [a-zA-Z0-9_] 2-16 chars; chat prefixes with '<' which is excluded.
+ *   ALL three patterns (JOIN, QUIT, LIST) are anchored to the INFO log prefix.
+ *   Player chat lines carry "<Name> …" between "]: " and the message body,
+ *   so the anchor prevents spoofing join/leave/list events from chat.
+ *   e.g. "<Vlam_> joined the game" or "<x> There are 5 out of maximum 20…"
+ *   cannot match because the "<Name> " block sits between "]: " and the text.
+ *   Valid MC usernames: [a-zA-Z0-9_] 2–16 chars; chat prefixes with '<' which is excluded.
  *
  * Other games use a "try-all-patterns" approach — Minecraft's strict security is not
  * needed there because console injection is far less of a concern on those servers.
@@ -26,18 +28,33 @@
 const textDecoder = new TextDecoder('utf-8')
 
 // eslint-disable-next-line no-control-regex
-const ANSI_RE = /\x1b\[[0-9;]*m/g
+const ANSI_RE    = /\x1b\[[0-9;]*m/g
+// Minecraft §X colour codes (§0-§9, §a-§f, §k-§o, §r) — used by Essentials etc.
+const MC_COLOR_RE = /§[0-9a-fk-orA-FK-OR]/g
 
 // ─── Minecraft (strict, anchored) ────────────────────────────────────────────
 const MC_JOIN = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) joined the game/
 const MC_QUIT = /^\[.*INFO[^\]]*\]:\s+([a-zA-Z0-9_]{2,16}) (?:left the game|lost connection)/
-const MC_LIST = /There are (\d+) (?:of a max of|out of maximum) (\d+) players online[.:]?\s*(?:(.+))?/
+
+// MC_LIST — ANCHORED to INFO prefix (see SECURITY note at top of file).
+// Groups: 1 = current, 2 = max, 3 = player names string (may be empty).
+// Supported vanilla/plugin variants:
+//   "There are X of a max of Y players online: p1, p2"   ← vanilla 1.7 – 1.21
+//   "There are X of a maximum of Y players online"        ← some proxy/forks
+//   "There are X out of maximum Y players online."        ← Essentials / EssentialsX
+//   "There are X out of a maximum of Y players online."   ← CMI, some other plugins
+//   "There are currently X …" (any of the above)         ← Purpur & config variants
+const MC_LIST = /^\[.*INFO[^\]]*\]:\s+There are (?:currently )?(\d+) (?:(?:out )?of (?:a |the )?max(?:imum)?(?:\s+of)?) (\d+) players online[.:]?\s*(.*)/i
 
 function _parseMinecraft(line) {
+  // Strip §X Minecraft colour codes before matching.
+  // ANSI_RE (applied upstream) handles \x1b[...m sequences;
+  // §X codes are a separate encoding used by Essentials and other plugins.
+  const clean = line.replace(MC_COLOR_RE, '')
   let m
-  if ((m = line.match(MC_JOIN))) return { type: 'join', name: m[1] }
-  if ((m = line.match(MC_QUIT))) return { type: 'leave', name: m[1] }
-  if ((m = line.match(MC_LIST))) {
+  if ((m = clean.match(MC_JOIN))) return { type: 'join', name: m[1] }
+  if ((m = clean.match(MC_QUIT))) return { type: 'leave', name: m[1] }
+  if ((m = clean.match(MC_LIST))) {
     return {
       type: 'list',
       max: parseInt(m[2]),
