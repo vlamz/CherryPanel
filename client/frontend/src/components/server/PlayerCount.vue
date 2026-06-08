@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { decodeLogs, parseConsoleLine } from '@/utils/consolePlayerParser.js'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { decodeLogs, parseConsoleLine, getCommandTemplate } from '@/utils/consolePlayerParser.js'
 
 const props = defineProps({
   server: { type: Object, required: true }
@@ -11,6 +11,8 @@ const maxPlayers = ref(0)
 const loading    = ref(true)
 const open       = ref(false)
 const panelEl    = ref(null)
+
+const cmdTpl = computed(() => getCommandTemplate(props.server.type))
 
 function applyEvent(ev) {
   if (!ev) return
@@ -29,7 +31,7 @@ function applyEvent(ev) {
 function handleConsoleEvent(data) {
   if (!data || !data.logs || !data.logs.length) return
   const text = decodeLogs(data.logs)
-  for (const line of text.split('\n')) applyEvent(parseConsoleLine(line))
+  for (const line of text.split('\n')) applyEvent(parseConsoleLine(line, props.server.type))
 }
 
 let unbind = null
@@ -54,12 +56,14 @@ function onOutsideClick(e) {
 }
 
 function kick(name) {
-  props.server.sendCommand('kick ' + name)
+  if (!cmdTpl.value?.kick) return
+  props.server.sendCommand(cmdTpl.value.kick.replace('{name}', name))
   players.value = players.value.filter(p => p !== name)
 }
 
 function ban(name) {
-  props.server.sendCommand('ban ' + name)
+  if (!cmdTpl.value?.ban) return
+  props.server.sendCommand(cmdTpl.value.ban.replace('{name}', name))
   players.value = players.value.filter(p => p !== name)
 }
 </script>
@@ -91,8 +95,8 @@ function ban(name) {
         <li v-for="p in players" :key="p" class="pc-panel__row">
           <span class="pc-panel__name">{{ p }}</span>
           <div class="pc-panel__actions">
-            <button class="pc-action pc-action--kick" @click="kick(p)">Kick</button>
-            <button class="pc-action pc-action--ban" @click="ban(p)">Ban</button>
+            <button v-if="cmdTpl?.kick" class="pc-action pc-action--kick" @click="kick(p)">Kick</button>
+            <button v-if="cmdTpl?.ban" class="pc-action pc-action--ban" @click="ban(p)">Ban</button>
           </div>
         </li>
       </ul>

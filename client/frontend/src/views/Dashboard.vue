@@ -252,13 +252,14 @@ const serverConnections = new Map() // serverId → { server, unbind }
 
 async function connectForPlayerCount(serverId) {
   if (serverConnections.has(serverId)) return
+  const serverType = servers.value.find(s => s.id === serverId)?.type || 'minecraft'
   try {
     const server = await api.server.get(serverId)
     const unbind = server.on('console', (data) => {
       if (!data?.logs?.length) return
       const text = decodeLogs(data.logs)
       for (const raw of text.split('\n')) {
-        const ev = parseConsoleLine(raw)
+        const ev = parseConsoleLine(raw, serverType)
         if (!ev) continue
         const cur = playerCounts.value[serverId] || { current: 0, max: 0 }
         if (ev.type === 'join') {
@@ -284,6 +285,27 @@ function disconnectServer(serverId) {
 
 function disconnectAll() {
   for (const id of serverConnections.keys()) disconnectServer(id)
+}
+
+// ─── Server start / stop from Dashboard card ──────────────────
+const actionLoading = ref(new Set())
+
+async function serverAction(serverId, action) {
+  if (actionLoading.value.has(serverId)) return
+  actionLoading.value = new Set([...actionLoading.value, serverId])
+  try {
+    if (action === 'start') await api.server.start(serverId)
+    else if (action === 'stop') await api.server.stop(serverId)
+  } catch (_) { /* 403 or other error — silently ignored */ }
+  finally {
+    // Give PufferPanel ~1.2s to process the action, then refresh status
+    setTimeout(async () => {
+      await refreshStatuses()
+      const next = new Set(actionLoading.value)
+      next.delete(serverId)
+      actionLoading.value = next
+    }, 1200)
+  }
 }
 
 async function loadAllServers() {
@@ -646,6 +668,24 @@ onUnmounted(() => {
         </template>
         <div v-else-if="server.online === 'offline'" class="sc__offline">{{ t('common.Offline') }}</div>
         <div v-else-if="server.online === 'installing'" class="sc__installing">{{ t('dashboard.InstallingDots') }}</div>
+
+        <!-- Start / Stop quick-action button (bottom-right of card) -->
+        <div v-if="server.online !== 'installing'" class="sc__actions" @click.prevent.stop>
+          <button v-if="server.online === 'offline'"
+            class="sc__act sc__act--start"
+            :disabled="actionLoading.has(server.id)"
+            :title="t('servers.Start')"
+            @click.prevent.stop="serverAction(server.id, 'start')">
+            <icon name="play" />
+          </button>
+          <button v-else-if="server.online === 'online'"
+            class="sc__act sc__act--stop"
+            :disabled="actionLoading.has(server.id)"
+            :title="t('servers.Stop')"
+            @click.prevent.stop="serverAction(server.id, 'stop')">
+            <icon name="stop" />
+          </button>
+        </div>
       </router-link>
 
       <router-link v-if="api.auth.hasScope('server.create')" :to="{ name: 'ServerCreate' }" class="sc sc--add">
@@ -1117,6 +1157,32 @@ onUnmounted(() => {
 
 .sc__offline, .sc__installing { font-size: 0.8em; opacity: 0.45; }
 .sc__installing { color: #f59e0b; opacity: 0.7; }
+
+/* Start / Stop action button */
+.sc__actions {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+}
+.sc__act {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(205,217,229,0.65);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+.sc__act--start:hover:not(:disabled) { background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35); }
+.sc__act--stop:hover:not(:disabled)  { background: rgba(239,68,68,0.18);  color: #f87171; border-color: rgba(239,68,68,0.35); }
+.sc__act:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* Mini bars */
 .sc__minibar {
