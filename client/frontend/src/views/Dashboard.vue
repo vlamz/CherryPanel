@@ -255,12 +255,17 @@ async function connectForPlayerCount(serverId) {
   const serverType = servers.value.find(s => s.id === serverId)?.type || 'minecraft'
   try {
     const server = await api.server.get(serverId)
-    // Non-Minecraft servers can't be queried via 'list' command, so initialize
-    // the counter to 0 right away — it will update as join/leave events arrive.
-    if (serverType && !serverType.startsWith('minecraft')) {
-      if (!playerCounts.value[serverId]) {
-        playerCounts.value = { ...playerCounts.value, [serverId]: { current: 0, max: 0 } }
-      }
+    // Initialize counter to 0 for ALL game types immediately so the widget
+    // is visible on the card even before a join/leave/list event arrives.
+    // (For Minecraft, getQuery may update it; for others, real-time events will.)
+    if (!playerCounts.value[serverId]) {
+      playerCounts.value = { ...playerCounts.value, [serverId]: { current: 0, max: 0 } }
+    }
+    // For Minecraft, send 'list' to get current players right away.
+    // Non-Minecraft servers don't support 'list', so we skip it.
+    const isMc = !serverType || serverType.startsWith('minecraft')
+    if (isMc && server.hasScope && server.hasScope('server.console.send')) {
+      server.sendCommand('list')
     }
     const unbind = server.on('console', (data) => {
       if (!data?.logs?.length) return
