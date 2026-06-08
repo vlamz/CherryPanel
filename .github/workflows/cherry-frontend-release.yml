@@ -1,0 +1,82 @@
+name: CherryPanel Frontend Release
+
+on:
+  push:
+    tags:
+      - 'cherry-v*'
+
+jobs:
+  build-frontend:
+    name: Build & Release Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: client/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: client/frontend
+        run: npm run build
+
+      - name: Package dist as zip
+        working-directory: client/frontend/dist
+        run: |
+          zip -r ../../../cherry-frontend.zip \
+            index.html \
+            favicon.png \
+            favicon.ico \
+            js/ \
+            css/ \
+            fonts/ \
+            assets/ \
+            manifest.json \
+            $(ls *.png *.svg *.webp 2>/dev/null || true)
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "CherryPanel ${{ github.ref_name }}"
+          body: |
+            ## CherryPanel Frontend — ${{ github.ref_name }}
+
+            Pre-built frontend files. **No build tools required.**
+
+            ### Installation (replaces PufferPanel frontend)
+
+            ```bash
+            # 1. Download cherry-frontend.zip from this release
+            # 2. Extract to a temp folder
+            unzip cherry-frontend.zip -d /tmp/cherry
+
+            # 3. Copy to your PufferPanel webroot (adjust path if needed)
+            sudo cp -r /tmp/cherry/* /var/www/pufferpanel/
+
+            # 4. Hard-refresh your browser: Ctrl+Shift+R
+            ```
+
+            > The Go backend (API, daemon, database) is **not touched**.
+            > CherryPanel is a frontend-only modification.
+
+            ### What's included
+            - Multi-game real-time player count (Minecraft, SRCDS/Unturned, Terraria, Factorio, Valheim, Zomboid, Eco, Vintage Story)
+            - Game-aware Kick/Ban buttons per player
+            - Dashboard Start/Stop buttons
+            - current/max player count display (e.g. 0/24)
+            - Cherry red branding + redesigned theme presets (Classic, Light, Dark Modern)
+            - i18n support (English + Turkish)
+          files: cherry-frontend.zip
+          draft: false
+          prerelease: false
