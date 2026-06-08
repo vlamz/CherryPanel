@@ -19,24 +19,24 @@ const selectedLocale = ref(locale.value)
 
 const PRESETS = [
   {
-    id: 'light-classic',
+    id: 'cherry-dark',
     label: 'Classic',
-    colors: ['#eee', '#fff', '#07a7e3'],
-    settings: { mode: 'mode-light', color: '#07a7e3', surfaceOverride: '' }
+    colors: ['#292929', '#333', '#A92331'],
+    settings: { mode: 'mode-dark', color: '#A92331', surfaceOverride: '' }
   },
   {
-    id: 'dark-standard',
-    label: 'Dark',
-    colors: ['#292929', '#333', '#07a7e3'],
-    settings: { mode: 'mode-dark', color: '#07a7e3', surfaceOverride: '' }
+    id: 'cherry-light',
+    label: 'Light',
+    colors: ['#eee', '#fff', '#A92331'],
+    settings: { mode: 'mode-light', color: '#A92331', surfaceOverride: '' }
   },
   {
     id: 'dark-modern',
     label: 'Dark Modern',
-    colors: ['#0d0d17', '#17172a', '#6366f1'],
+    colors: ['#0d0d17', '#17172a', '#A92331'],
     settings: {
       mode: 'mode-dark',
-      color: '#6366f1',
+      color: '#A92331',
       surfaceOverride: '#app{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}'
     }
   }
