@@ -20,16 +20,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: client/frontend/package-lock.json
+          cache: 'yarn'
+          cache-dependency-path: client/yarn.lock
+
+      - name: Install yarn
+        run: npm install -g yarn
 
       - name: Install dependencies
-        working-directory: client/frontend
-        run: npm ci
+        working-directory: client
+        run: yarn install
 
       - name: Build frontend
-        working-directory: client/frontend
-        run: npm run build
+        working-directory: client
+        run: yarn build
 
       - name: Package dist as zip
         working-directory: client/frontend/dist
@@ -40,17 +43,16 @@ jobs:
             favicon.ico \
             js/ \
             css/ \
-            fonts/ \
-            assets/ \
-            manifest.json \
-            $(ls *.png *.svg *.webp 2>/dev/null || true)
+            $(ls fonts/ 2>/dev/null && echo fonts/ || true) \
+            $(ls assets/ 2>/dev/null && echo assets/ || true) \
+            $(ls manifest.json 2>/dev/null || true)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "CherryPanel ${{ github.ref_name }}"
           body: |
-            ## CherryPanel Frontend — ${{ github.ref_name }}
+            ## CherryPanel ${{ github.ref_name }}
 
             Pre-built frontend files. **No build tools required.**
 
@@ -68,15 +70,15 @@ jobs:
             ```
 
             > The Go backend (API, daemon, database) is **not touched**.
-            > CherryPanel is a frontend-only modification.
+            > CherryPanel is a **frontend-only** modification.
 
-            ### What's included
-            - Multi-game real-time player count (Minecraft, SRCDS/Unturned, Terraria, Factorio, Valheim, Zomboid, Eco, Vintage Story)
-            - Game-aware Kick/Ban buttons per player
-            - Dashboard Start/Stop buttons
-            - current/max player count display (e.g. 0/24)
+            ### Features
+            - Real-time player count for Minecraft, SRCDS/Unturned, Terraria, Factorio, Valheim, Zomboid, Eco, Vintage Story
+            - Game-aware Kick / Ban buttons per player
+            - Dashboard Start / Stop buttons
+            - current/max format (e.g. `0/24`)
             - Cherry red branding + redesigned theme presets (Classic, Light, Dark Modern)
-            - i18n support (English + Turkish)
+            - Full i18n support (English + Turkish)
           files: cherry-frontend.zip
           draft: false
           prerelease: false
