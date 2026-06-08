@@ -139,7 +139,7 @@
           "default": true
         },
         {
-          "value": "#app{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}",
+          "value": "#root{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}",
           "label": "Dark Modern"
         }
       ]
