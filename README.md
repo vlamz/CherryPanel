@@ -1,139 +1,156 @@
 <div align="center">
   <img src="client/frontend/public/favicon.png" width="80" alt="CherryPanel logo" />
   <h1>CherryPanel</h1>
-  <p>A feature-enhanced fork of <a href="https://github.com/pufferpanel/pufferpanel">PufferPanel</a> with multi-game support, real-time player tracking, and a polished dashboard experience.</p>
+  <p>
+    Open-source game server management panel — fork of <a href="https://github.com/pufferpanel/pufferpanel">PufferPanel</a> with real-time player tracking, multi-game support, Turkish language, and a polished dashboard.
+  </p>
+  <p>
+    <em>Arkadaşlarınızla oyun oynamak için kendi sunucu yönetim panelinizi kurun. Ücretsiz, açık kaynak.</em>
+  </p>
 
-  <img src="https://img.shields.io/badge/based%20on-PufferPanel-blue?style=flat-square" alt="Based on PufferPanel" />
-  <img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/maintained%20by-vlamz-red?style=flat-square" alt="Maintained by vlamz" />
+  <img src="https://img.shields.io/badge/based%20on-PufferPanel%20v3-blue?style=flat-square" alt="Based on PufferPanel v3" />
+  <img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License Apache 2.0" />
+  <img src="https://img.shields.io/badge/language-EN%20%7C%20TR-red?style=flat-square" alt="English and Turkish" />
+  <img src="https://img.shields.io/github/v/release/vlamz/CherryPanel?style=flat-square&label=latest%20release&color=crimson" alt="Latest release" />
 </div>
 
 ---
 
-## Screenshot
+## Screenshots
 
-![CherryPanel login page](screenshots/login.png)
+<table>
+  <tr>
+    <td align="center"><b>Dashboard</b></td>
+    <td align="center"><b>Server Console</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/dashboard.png" alt="CherryPanel Dashboard — real-time player count, performance chart, server cards" /></td>
+    <td><img src="screenshots/login_email.png" alt="CherryPanel Login" /></td>
+  </tr>
+</table>
 
 ---
 
 ## What is CherryPanel?
 
-CherryPanel is a fork of [PufferPanel](https://pufferpanel.com) — an open-source game server management panel — with a focus on enhanced multi-game support, real-time player visibility, and a better dashboard experience.
+**CherryPanel** is a free, self-hosted game server management panel based on [PufferPanel](https://pufferpanel.com). It lets you run and manage game servers (Minecraft, Unturned, Terraria, Valheim, and more) from a single web interface — no command-line knowledge required for day-to-day use.
 
-It uses the same Go backend as PufferPanel and adds a significantly improved Vue 3 frontend.
+**Perfect for:**
+- Running a **Minecraft server with friends** on your own VPS or dedicated machine
+- Managing multiple game servers from one panel
+- Server admins who want a clean, modern dashboard with real-time stats
 
-> **CherryPanel is a derivative work.** The original PufferPanel codebase is copyright 2025 PufferPanel, licensed under Apache 2.0. All modifications and additions are copyright 2026 Alperen (vlamz).
+It uses the same **Go backend** as PufferPanel (API, daemon, database unchanged) and adds a significantly improved **Vue 3 frontend**.
+
+> **CherryPanel is a derivative work.** Original PufferPanel codebase © 2025 PufferPanel (Apache 2.0). Modifications © 2026 Alperen (vlamz).
 
 ---
 
-## Features added over PufferPanel
+## Quick Install (no build tools needed)
 
-### 🎮 Multi-Game Real-time Player Count
-- Live player count on every server card in the Dashboard
-- Updates **instantly** when a player joins or leaves — no polling delay
-- Uses WebSocket connections to the game server console
-- Also fetches initial count from the query API on startup
-- **Supported games / server types:**
+Download the pre-built zip from the [latest release](https://github.com/vlamz/CherryPanel/releases/latest) and extract it to your PufferPanel webroot:
+
+```bash
+# Download the latest release
+wget https://github.com/vlamz/CherryPanel/releases/latest/download/cherry-frontend.zip
+
+# Extract to a temporary folder
+unzip cherry-frontend.zip -d /tmp/cherry
+
+# Copy to your PufferPanel webroot (adjust path if needed)
+sudo cp -r /tmp/cherry/* /var/www/pufferpanel/
+
+# Hard-refresh your browser
+# Ctrl+Shift+R
+```
+
+> **Requires a working [PufferPanel v3](https://docs.pufferpanel.com) installation.**
+> The Go backend (API, daemon, database) is **never touched** — only the frontend files are replaced.
+
+---
+
+## Features
+
+### 🎮 Real-Time Player Count — Multi-Game
+Live player count on every server card in the Dashboard. Updates **instantly** when a player joins or leaves (WebSocket-based, no polling).
 
 | Server Type | Games |
 |---|---|
-| `minecraft` / `minecraft-java` | Minecraft Java / Bedrock, Paper, Purpur, Spigot |
-| `srcds` | CS:GO, TF2, Garry's Mod, Arma 3, **Unturned**, Rust, Don't Starve Together, ARK, 7 Days to Die, Squad, Satisfactory |
+| `minecraft` / `minecraft-java` | Minecraft Java, Paper, Purpur, Spigot, Essentials |
+| `srcds` | Unturned, CS:GO, TF2, Garry's Mod, Rust, ARK, 7 Days to Die, Squad, Don't Starve Together |
 | `terraria` | Terraria (TShock / Vanilla / tModLoader) |
 | `factorio` | Factorio |
 | `valheim` | Valheim |
 | `zomboid` | Project Zomboid |
 | `eco` | Eco |
 | `custom` | Vintage Story |
-| Generic fallback | Any game with "player joined/connected" style logs |
+| Generic | Any game with "player joined/connected" style logs |
+
+Shows **current/max** format (e.g. `0/24`) — max is read from server definition or from the game's response to the `list` command.
 
 ### 🦵 Game-Aware Kick / Ban
-- Player list popup shows **Kick** and **Ban** buttons per player
-- Commands are adapted per game type (e.g. `kick "Name"` for SRCDS, `/kick Name` for Terraria, `kickuser "Name"` for Zomboid)
-- Kick/Ban buttons are **hidden** when not supported by the game type (e.g. Valheim)
+Player list popup with **Kick** and **Ban** buttons per player. Commands are adapted per game type — buttons are hidden when the game doesn't support them.
 
-### ▶ Dashboard Start / Stop Buttons
-- Each server card has a **▶ Start** button when offline and a **■ Stop** button when online
-- Located bottom-right of the card; clicking them does **not** navigate away
-- Immediate visual feedback — button is disabled while action is in progress, status refreshes automatically
+### ▶ Dashboard Start / Stop
+Each server card has a **▶ Start** button (when offline) or **■ Stop** button (when online). Clicking them does not navigate away from the dashboard.
 
-### 🔒 Chat Manipulation Security (Minecraft)
-- Player join/leave detection is anchored to the Minecraft INFO log format
-- Players **cannot spoof** join/leave events by typing fake messages in chat
-- Valid Minecraft usernames only (`[a-zA-Z0-9_]{2,16}`)
+### 🔒 Anti-Spoof Player Detection (Minecraft)
+Join/leave/list parsing is anchored to the server's INFO log prefix. A player **cannot spoof** these events by typing fake log lines in chat.
 
 ### 📊 Enhanced Dashboard
-- **CPU usage** normalized to total system capacity (supports multi-core correctly)
-- **RAM usage** with per-server max memory from server definition
-- **Performance history chart** with selectable time ranges (1h, 24h, 1w, 1mo)
-- Persistent history stored in localStorage (up to 30 days)
-- Server grouping with drag-free assignment per server
-- Sort by status / name / player count / node
+- CPU usage normalized to total system capacity (multi-core aware)
+- RAM usage with per-server memory limit from server definition
+- Performance history chart (1h / 24h / 1w / 1mo selectable range)
+- Server grouping and sorting (by status / name / player count / node)
+- Adjustable refresh interval (5s – 60s)
 
-### ⚙️ Configurable Dashboard Settings
-- Adjustable **refresh interval** (5s / 10s / 15s / 30s / 60s)
-- Configurable **logical CPU count** (for correct CPU % normalization)
-- Settings persist across page reloads via localStorage
+### 🎨 Theme Presets
 
-### 🌐 Full i18n Integration
-All Dashboard strings are integrated into the vue-i18n translation system (English + Turkish included).
+| Preset | Description |
+|---|---|
+| **Classic** | Dark mode with cherry red accent — default |
+| **Light** | Light mode with cherry red accent |
+| **Dark Modern** | Deep navy dark mode with rounded corners |
 
-### 🍒 CherryPanel Branding
-- Cherry red as the default accent color (`#A92331`)
-- Custom cherry favicon
-- Ready to rebrand via PufferPanel's built-in theme settings
+Accent color is fully customizable via Preferences → Theme → Base Color.
 
 ---
 
-## Installation
+## 🇹🇷 Türkçe Dil Desteği
 
-CherryPanel uses the same installation process as PufferPanel. The only difference is that the frontend files are replaced with the CherryPanel build.
+CherryPanel, PufferPanel'in resmi Türkçe çevirilerine ek olarak kendi özel bileşenleri için de tam Türkçe dil desteği sunar.
+
+**Türkçe olan bileşenler:**
+- Dashboard — tüm arayüz metinleri
+- Oyuncu listesi paneli (Online Oyuncular, Yükleniyor…, Şu an kimse yok)
+- Kick / Ban buton etiketleri
+- Tema ayarları ve tüm tercihler sayfası
+
+**Dili değiştirmek için:**
+Sağ üst köşedeki profil ikonuna tıkla → **Preferences** → **Language** → **Türkçe** seç → **Save Preferences**.
+
+> Yanlış veya eksik çeviri bulursanız `client/frontend/src/lang/tr_TR/` klasöründeki JSON dosyalarını düzenleyip pull request açabilirsiniz.
+
+---
+
+## Installation (from source)
 
 ### Prerequisites
 - A working [PufferPanel v3](https://docs.pufferpanel.com) installation
-- Node.js 18+ (only needed if building from source)
+- Node.js 22+ and yarn
 
-### Option A — Replace frontend files only (recommended)
-
-This is the easiest method. You keep PufferPanel's Go backend and only replace the frontend.
-
-1. **Back up your current webroot:**
-   ```bash
-   cp -r /var/www/pufferpanel /var/www/pufferpanel-backup
-   ```
-
-2. **Clone this repository and build:**
-   ```bash
-   git clone https://github.com/vlamz/CherryPanel.git
-   cd CherryPanel/client/frontend
-   npm install
-   npm run build
-   ```
-
-3. **Copy the build output to your webroot** (adjust path as needed):
-   ```bash
-   sudo cp dist/index.html /var/www/pufferpanel/
-   sudo cp -r dist/js/ /var/www/pufferpanel/
-   sudo cp -r dist/css/ /var/www/pufferpanel/
-   sudo cp dist/favicon.png /var/www/pufferpanel/
-   sudo cp dist/favicon.ico /var/www/pufferpanel/
-   ```
-
-4. **Reload your browser** — that's it.
-
-> The Go backend (API, daemon, database) remains completely unchanged.
-> CherryPanel is a **frontend-only** modification.
-
----
-
-### Option B — Build from source
+### Build and install
 
 ```bash
 git clone https://github.com/vlamz/CherryPanel.git
-cd CherryPanel/client/frontend
-npm install
-npm run build
+cd CherryPanel/client
+yarn install
+yarn build
 # Output is in: client/frontend/dist/
+
+sudo cp -r frontend/dist/index.html frontend/dist/js/ frontend/dist/css/ \
+           frontend/dist/favicon.png frontend/dist/favicon.ico \
+           /var/www/pufferpanel/
 ```
 
 ---
@@ -141,59 +158,63 @@ npm run build
 ## Configuration
 
 ### CPU normalization
-CherryPanel shows CPU usage as a percentage of **total system capacity**. By default it assumes **12 logical CPUs** (6 cores × 2 threads).
+CherryPanel shows CPU usage as a percentage of total system capacity. Default assumes **12 logical CPUs** (6 cores × 2 threads).
 
-To adjust for your server: open the Dashboard → click the **⚙ gear icon** (top right of the server list) → set the correct CPU count.
+To adjust: Dashboard → **⚙ gear icon** (top right) → set your CPU count.
 
-Run this on your server to find the right number:
 ```bash
+# Find your CPU count
 lscpu | grep "^CPU(s):"
 ```
 
-### Panel branding name
-The panel title (shown in the topbar) comes from the PufferPanel backend configuration. Change it in the PufferPanel admin settings under **Settings → Branding**.
-
 ### Accent color
-The default accent color is cherry red (`#A92331`). Change it per-user in **Preferences → Theme → Base Color**.
+Default is cherry red (`#A92331`). Change per-user in **Preferences → Theme → Base Color**.
+
+### Panel name
+The panel title comes from the PufferPanel backend. Change it in **Settings → Branding**.
 
 ---
 
 ## Compatibility
 
 | Component | Version |
-|-----------|---------|
+|---|---|
 | PufferPanel backend | v3.x |
-| Node.js (build) | 18+ |
-| Browsers | All modern browsers |
-| Supported game types | minecraft, srcds, terraria, factorio, valheim, zomboid, eco, custom |
+| Node.js (build only) | 22+ |
+| Browsers | All modern browsers (Chrome, Firefox, Safari, Edge) |
+| OS (server) | Linux (amd64 / arm64) |
+| Minecraft plugin support | Vanilla, Essentials, EssentialsX, CMI, Paper, Purpur, Spigot |
 
 ---
 
-## Project structure (relevant changes)
+## Project Structure (changed files)
 
 ```
 client/frontend/src/
 ├── views/
-│   └── Dashboard.vue              # Enhanced dashboard (player counts, start/stop buttons, charts, settings)
+│   ├── Dashboard.vue              # Player counts, start/stop, charts, groups, settings
+│   └── self/Preferences.vue      # Theme presets (Classic, Light, Dark Modern)
 ├── components/server/
 │   └── PlayerCount.vue            # Per-server player list with game-aware kick/ban
 ├── utils/
-│   └── consolePlayerParser.js     # Multi-game console parser + getCommandTemplate()
+│   └── consolePlayerParser.js     # Multi-game parser, anti-spoof anchoring, §X stripping
 ├── lang/
-│   ├── en_US/dashboard.json       # English dashboard translations
-│   └── tr_TR/dashboard.json       # Turkish dashboard translations
-├── themes/default/
-│   └── manifest.json              # Default accent color: #A92331 (cherry red)
-└── plugins/
-    └── i18n.js                    # Dashboard namespace added
-client/frontend/
-├── index.html                     # CherryPanel title + favicon
-└── public/
-    ├── favicon.png                # Cherry favicon (64×64, whitespace-cropped)
-    └── favicon.ico                # Cherry favicon (legacy)
+│   ├── en_US/servers.json         # English: PlayersOnline, Kick, Ban, …
+│   └── tr_TR/servers.json         # Turkish: Online Oyuncular, Kick, Ban, …
+└── themes/default/
+    └── manifest.json              # Default mode: dark, color: #A92331
 screenshots/
-└── login.png                      # CherryPanel login page screenshot
+├── dashboard.png                  # Dashboard with player counts and performance chart
+└── login_email.png                # Login page
 ```
+
+---
+
+## Releases
+
+Pre-built frontend zips are published automatically on every `cherry-v*` tag via GitHub Actions.
+
+[→ See all releases](https://github.com/vlamz/CherryPanel/releases)
 
 ---
 
@@ -201,25 +222,34 @@ screenshots/
 
 Pull requests are welcome. Open an issue first for major changes.
 
-When contributing, try to match the style of the files you're editing. The base PufferPanel code follows its own conventions for most of the codebase.
+- Match the code style of the file you're editing
+- Translation fixes: edit `client/frontend/src/lang/{locale}/` JSON files
+- New game support: add patterns to `consolePlayerParser.js`
 
 ---
 
 ## Credits
 
-- **[PufferPanel](https://github.com/pufferpanel/pufferpanel)** — the original open-source game server panel this project is based on (Apache 2.0)
+- **[PufferPanel](https://github.com/pufferpanel/pufferpanel)** — original open-source game server panel (Apache 2.0)
 - **[vlamz](https://github.com/vlamz)** — CherryPanel modifications and additions
 
 ---
 
 ## License
 
-CherryPanel is distributed under the **Apache License 2.0** — the same license as PufferPanel.
+Apache License 2.0 — same as PufferPanel.
 
 ```
 Copyright 2026 Alperen (vlamz) — CherryPanel modifications
 Copyright 2025 PufferPanel — original work
-
-Licensed under the Apache License, Version 2.0.
-See the LICENSE file for the full license text.
 ```
+
+---
+
+<div align="center">
+  <sub>
+    Keywords: game server panel · minecraft server management · self-hosted game server · pufferpanel fork ·
+    minecraft sunucu kurma · oyun sunucusu yönetim paneli · türkçe oyun paneli · arkadaşlarla minecraft ·
+    unturned server panel · open source server management
+  </sub>
+</div>
