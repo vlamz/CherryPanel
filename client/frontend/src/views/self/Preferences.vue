@@ -37,7 +37,7 @@ const PRESETS = [
     settings: {
       mode: 'mode-dark',
       color: '#A92331',
-      surfaceOverride: '#app{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}'
+      surfaceOverride: '#root{--backdrop:#0d0d17;--background:#17172a;--border-radius:12px}'
     }
   }
 ]
