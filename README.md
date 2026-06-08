@@ -1,7 +1,7 @@
 <div align="center">
   <img src="client/frontend/public/favicon.png" width="80" alt="CherryPanel logo" />
   <h1>CherryPanel</h1>
-  <p>A feature-enhanced fork of <a href="https://github.com/pufferpanel/pufferpanel">PufferPanel</a> focused on Minecraft server management.</p>
+  <p>A feature-enhanced fork of <a href="https://github.com/pufferpanel/pufferpanel">PufferPanel</a> with multi-game support, real-time player tracking, and a polished dashboard experience.</p>
 
   <img src="https://img.shields.io/badge/based%20on-PufferPanel-blue?style=flat-square" alt="Based on PufferPanel" />
   <img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License" />
@@ -10,9 +10,15 @@
 
 ---
 
+## Screenshot
+
+![CherryPanel login page](screenshots/login.png)
+
+---
+
 ## What is CherryPanel?
 
-CherryPanel is a fork of [PufferPanel](https://pufferpanel.com) — an open-source game server management panel — with a focus on enhanced Minecraft support and a better dashboard experience.
+CherryPanel is a fork of [PufferPanel](https://pufferpanel.com) — an open-source game server management panel — with a focus on enhanced multi-game support, real-time player visibility, and a better dashboard experience.
 
 It uses the same Go backend as PufferPanel and adds a significantly improved Vue 3 frontend.
 
@@ -22,13 +28,36 @@ It uses the same Go backend as PufferPanel and adds a significantly improved Vue
 
 ## Features added over PufferPanel
 
-### 🎮 Real-time Player Count
-- Live player count displayed on every server card in the Dashboard
+### 🎮 Multi-Game Real-time Player Count
+- Live player count on every server card in the Dashboard
 - Updates **instantly** when a player joins or leaves — no polling delay
 - Uses WebSocket connections to the game server console
 - Also fetches initial count from the query API on startup
+- **Supported games / server types:**
 
-### 🔒 Chat Manipulation Security
+| Server Type | Games |
+|---|---|
+| `minecraft` / `minecraft-java` | Minecraft Java / Bedrock, Paper, Purpur, Spigot |
+| `srcds` | CS:GO, TF2, Garry's Mod, Arma 3, **Unturned**, Rust, Don't Starve Together, ARK, 7 Days to Die, Squad, Satisfactory |
+| `terraria` | Terraria (TShock / Vanilla / tModLoader) |
+| `factorio` | Factorio |
+| `valheim` | Valheim |
+| `zomboid` | Project Zomboid |
+| `eco` | Eco |
+| `custom` | Vintage Story |
+| Generic fallback | Any game with "player joined/connected" style logs |
+
+### 🦵 Game-Aware Kick / Ban
+- Player list popup shows **Kick** and **Ban** buttons per player
+- Commands are adapted per game type (e.g. `kick "Name"` for SRCDS, `/kick Name` for Terraria, `kickuser "Name"` for Zomboid)
+- Kick/Ban buttons are **hidden** when not supported by the game type (e.g. Valheim)
+
+### ▶ Dashboard Start / Stop Buttons
+- Each server card has a **▶ Start** button when offline and a **■ Stop** button when online
+- Located bottom-right of the card; clicking them does **not** navigate away
+- Immediate visual feedback — button is disabled while action is in progress, status refreshes automatically
+
+### 🔒 Chat Manipulation Security (Minecraft)
 - Player join/leave detection is anchored to the Minecraft INFO log format
 - Players **cannot spoof** join/leave events by typing fake messages in chat
 - Valid Minecraft usernames only (`[a-zA-Z0-9_]{2,16}`)
@@ -86,6 +115,8 @@ This is the easiest method. You keep PufferPanel's Go backend and only replace t
    sudo cp dist/index.html /var/www/pufferpanel/
    sudo cp -r dist/js/ /var/www/pufferpanel/
    sudo cp -r dist/css/ /var/www/pufferpanel/
+   sudo cp dist/favicon.png /var/www/pufferpanel/
+   sudo cp dist/favicon.ico /var/www/pufferpanel/
    ```
 
 4. **Reload your browser** — that's it.
@@ -134,7 +165,7 @@ The default accent color is cherry red (`#A92331`). Change it per-user in **Pref
 | PufferPanel backend | v3.x |
 | Node.js (build) | 18+ |
 | Browsers | All modern browsers |
-| Minecraft server types | Paper, Purpur, Spigot, Vanilla |
+| Supported game types | minecraft, srcds, terraria, factorio, valheim, zomboid, eco, custom |
 
 ---
 
@@ -143,11 +174,11 @@ The default accent color is cherry red (`#A92331`). Change it per-user in **Pref
 ```
 client/frontend/src/
 ├── views/
-│   └── Dashboard.vue              # Enhanced dashboard (player counts, charts, settings)
+│   └── Dashboard.vue              # Enhanced dashboard (player counts, start/stop buttons, charts, settings)
 ├── components/server/
-│   └── PlayerCount.vue            # Per-server player list with kick/ban
+│   └── PlayerCount.vue            # Per-server player list with game-aware kick/ban
 ├── utils/
-│   └── consolePlayerParser.js     # Shared, secure Minecraft console parser
+│   └── consolePlayerParser.js     # Multi-game console parser + getCommandTemplate()
 ├── lang/
 │   ├── en_US/dashboard.json       # English dashboard translations
 │   └── tr_TR/dashboard.json       # Turkish dashboard translations
@@ -158,8 +189,10 @@ client/frontend/src/
 client/frontend/
 ├── index.html                     # CherryPanel title + favicon
 └── public/
-    ├── favicon.png                # Cherry favicon
+    ├── favicon.png                # Cherry favicon (64×64, whitespace-cropped)
     └── favicon.ico                # Cherry favicon (legacy)
+screenshots/
+└── login.png                      # CherryPanel login page screenshot
 ```
 
 ---
