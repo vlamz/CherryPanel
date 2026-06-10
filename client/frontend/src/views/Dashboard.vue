@@ -154,6 +154,8 @@ function initChart() {
   if (chartInstance) { chartInstance.destroy(); chartInstance = null }
 
   const { labels, cpu, ram, disk } = getChartDataset()
+  const range = RANGES.value.find(r => r.key === chartRange.value)
+  const now = Date.now()
 
   chartInstance = new Chart(chartCanvas.value, {
     type: 'line',
@@ -202,6 +204,8 @@ function initChart() {
       scales: {
         x: {
           type: 'time',
+          min: now - range.ms,
+          max: now,
           time: { displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm', hour: 'HH:mm', day: 'dd.MM' } },
           ticks: { color: 'rgba(240,240,240,0.35)', maxTicksLimit: 6, font: { size: 10 } },
           grid: { color: 'rgba(255,255,255,0.04)' },
@@ -221,20 +225,28 @@ function initChart() {
 function updateChart() {
   if (!chartInstance) return
   const { labels, cpu, ram, disk } = getChartDataset()
+  const range = RANGES.value.find(r => r.key === chartRange.value)
+  const now = Date.now()
   chartInstance.data.labels = labels
   chartInstance.data.datasets[0].data = cpu
   chartInstance.data.datasets[1].data = ram
   chartInstance.data.datasets[2].data = disk
+  chartInstance.options.scales.x.min = now - range.ms
+  chartInstance.options.scales.x.max = now
   chartInstance.update('none')
 }
 
 watch(chartRange, () => {
   if (!chartInstance) return
   const { labels, cpu, ram, disk } = getChartDataset()
+  const range = RANGES.value.find(r => r.key === chartRange.value)
+  const now = Date.now()
   chartInstance.data.labels = labels
   chartInstance.data.datasets[0].data = cpu
   chartInstance.data.datasets[1].data = ram
   chartInstance.data.datasets[2].data = disk
+  chartInstance.options.scales.x.min = now - range.ms
+  chartInstance.options.scales.x.max = now
   chartInstance.update()
 })
 
