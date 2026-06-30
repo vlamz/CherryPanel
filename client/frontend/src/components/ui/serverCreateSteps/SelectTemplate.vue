@@ -11,6 +11,7 @@ const api = inject('api')
 const emit = defineEmits(['selected', 'back'])
 const templatesByRepo = ref([])
 const incompatibleTemplates = ref([])
+const erroredRepos = ref([])
 const showing = ref(false)
 const currentTemplate = ref({})
 
@@ -43,7 +44,14 @@ async function load() {
   const repos = await api.template.listAllTemplates()
   const compatible = []
   const incompatible = []
+  const errored = []
   Object.keys(repos).sort((a, b) => repos[a].id > repos[b].id).map(repo => {
+    if (!Array.isArray(repos[repo].templates)) {
+      // repo failed to sync (network issue, bad branch, etc.) - skip it
+      // instead of crashing the whole template list
+      errored.push(repos[repo])
+      return
+    }
     if (repos[repo].templates.length === 0) return
     const templates = repos[repo].templates.filter(template => {
       return templateEnvMatches(template) &&
@@ -63,6 +71,7 @@ async function load() {
   })
   templatesByRepo.value = compatible
   incompatibleTemplates.value = incompatible
+  erroredRepos.value = errored
 }
 
 onMounted(async () => {
@@ -88,6 +97,9 @@ function choice(confirm) {
 <template>
   <div class="select-template">
     <h2 v-text="t('servers.SelectTemplate')" />
+    <div v-for="repo in erroredRepos" :key="repo.id" class="alert error">
+      {{ repo.name }}: {{ (repo.error && repo.error.code === 'ErrGeneric' && repo.error.msg) ? t(repo.error.msg) : t('errors.' + (repo.error && repo.error.code)) }}
+    </div>
     <div v-for="repo in templatesByRepo" :key="repo.id" class="list">
       <h3 class="list-header" v-text="repo.name" />
       <div v-for="template in repo.templates" :key="template.name" class="list-item template" @click="show(repo.id, template.name)">
