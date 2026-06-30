@@ -23,6 +23,9 @@ const allowDirectoryUpload = 'webkitdirectory' in document.createElement('input'
 const canEdit = props.server.hasScope('server.files.edit')
 
 const fileEls = ref([])
+const uploadRef = ref(null)
+const isDragging = ref(false)
+let dragCounter = 0
 const files = ref(null)
 const file = ref(null)
 const fileSizeWarn = ref(false)
@@ -379,10 +382,44 @@ function selectAll() {
     return f
   })
 }
+
+function onDragEnter(event) {
+  if (!canEdit) return
+  if (!event.dataTransfer.types.includes('Files')) return
+  dragCounter++
+  isDragging.value = true
+}
+
+function onDragLeave() {
+  dragCounter = Math.max(0, dragCounter - 1)
+  if (dragCounter === 0) isDragging.value = false
+}
+
+async function onDrop(event) {
+  dragCounter = 0
+  isDragging.value = false
+  if (!canEdit) return
+  const droppedFiles = event.dataTransfer.files
+  if (!droppedFiles || droppedFiles.length === 0) return
+  await uploadRef.value.uploadFileList(droppedFiles)
+  refresh()
+}
 </script>
 
 <template>
-  <div v-hotkey="'Control+a'" class="file-manager" @hotkey="selectAll()">
+  <div
+    v-hotkey="'Control+a'"
+    :class="['file-manager', isDragging ? 'drag-active' : '']"
+    @hotkey="selectAll()"
+    @dragenter.prevent="onDragEnter"
+    @dragover.prevent
+    @dragleave.prevent="onDragLeave"
+    @drop.prevent="onDrop"
+  >
+    <div v-if="isDragging" class="drop-overlay">
+      <icon name="file-upload" />
+      <span v-text="t('files.DropToUpload')" />
+    </div>
     <div class="header">
       <h2 v-text="t('servers.Files')" />
       <h3>
@@ -395,7 +432,7 @@ function selectAll() {
       <span class="spacer" />
       <span v-if="selection.length === 0" class="controls">
         <btn v-if="canEdit" v-hotkey="'f a'" variant="icon" :tooltip="t('files.ArchiveCurrent')" @click="archiveCurrentDirectory()"><icon name="archive" /></btn>
-        <upload v-if="canEdit" :path="getCurrentPath()" :server="server" hotkey="f u" @uploaded="refresh()" />
+        <upload v-if="canEdit" ref="uploadRef" :path="getCurrentPath()" :server="server" hotkey="f u" @uploaded="refresh()" />
         <upload v-if="canEdit && allowDirectoryUpload" :path="getCurrentPath()" :server="server" folder hotkey="f d" @uploaded="refresh()" />
         <btn v-if="canEdit" v-hotkey="'f c f'" variant="icon" :tooltip="t('files.CreateFile')" @click="startCreateFile()"><icon name="file-create" /></btn>
         <btn v-if="canEdit" v-hotkey="'f c d'" variant="icon" :tooltip="t('files.CreateFolder')" @click="startCreateFolder()"><icon name="folder-create" /></btn>

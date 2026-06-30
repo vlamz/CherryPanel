@@ -10,6 +10,7 @@
   "Download": "Download",
   "Delete": "Delete",
   "ConfirmDelete": "Do you really want to delete {name}?",
+  "DropToUpload": "Drop files to upload",
   "UploadSuccess": "Files uploaded successfully",
   "UploadFailed": "Failed uploading files",
   "UploadProgress": "Upload progress",

@@ -53,27 +53,31 @@ function onUploadProgress(event) {
 }
 
 async function uploadFiles(event) {
+  await uploadFileList(event.target.files, event.target.webkitdirectory)
+}
+
+async function uploadFileList(fileList, isDirectory = false) {
   uploadState.value = { state: 'preparing' }
   uploading.value = true
   try {
-    if (event.target.webkitdirectory) await prepareFolders(event.target.files)
+    if (isDirectory) await prepareFolders(fileList)
     uploadState.value = {
       state: 'upload files',
       current: 0,
-      total: event.target.files.length,
+      total: fileList.length,
       files: []
     }
-    for (let i = 0; i < event.target.files.length; i++) {
-      const file = event.target.files[i]
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i]
       uploadState.value.files[i + 1] = {
         name: file.webkitRelativePath || file.name,
         size: file.size,
         progress: 0
       }
     }
-    for (let i = 0; i < event.target.files.length; i++) {
+    for (let i = 0; i < fileList.length; i++) {
       uploadState.value.current = i + 1
-      const file = event.target.files[i]
+      const file = fileList[i]
       let path = props.path + '/'
       if (file.webkitRelativePath) {
         path = path + file.webkitRelativePath
@@ -92,6 +96,8 @@ async function uploadFiles(event) {
     uploadState.value = null
   }
 }
+
+defineExpose({ uploadFileList })
 </script>
 
 <template>

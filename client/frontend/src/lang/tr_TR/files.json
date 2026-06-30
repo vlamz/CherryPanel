@@ -10,6 +10,7 @@
   "Download": "Download",
   "Delete": "Delete",
   "ConfirmDelete": "Bu dosyayı silmek istediğinden emin misin?",
+  "DropToUpload": "Yüklemek için dosyaları bırak",
   "UploadSuccess": "Files uploaded successfully",
   "UploadFailed": "Failed uploading files",
   "UploadProgress": "Upload progress",
