@@ -81,7 +81,7 @@ func RegisterServerRoutes(e *gin.RouterGroup) {
 		l.GET("/:serverId/file/*filename", middleware.ResolveServerNode, getFile)
 		l.PUT("/:serverId/file/*filename", middleware.ResolveServerNode, putFile)
 		l.DELETE("/:serverId/file/*filename", middleware.ResolveServerNode, deleteFile)
-		l.POST("/:serverId/file/*filename", middleware.ResolveServerNode, response.NotImplemented)
+		l.POST("/:serverId/file/*filename", middleware.ResolveServerNode, moveFile)
 		l.OPTIONS("/:serverId/file/*filename", response.CreateOptions("GET", "PUT", "DELETE", "POST"))
 
 		l.GET("/:serverId/console", middleware.ResolveServerNode, getLogs)
@@ -722,6 +722,32 @@ func deleteFile(c *gin.Context) {
 		err = server.GetFileServer().Remove(targetPath)
 	}
 
+	if response.HandleError(c, err, http.StatusInternalServerError) {
+	} else {
+		c.Status(http.StatusNoContent)
+	}
+}
+
+// @Summary Move/rename file
+// @Description Moves or renames a file or folder within the server
+// @Success 204 {object} nil
+// @Param id path string true "Server ID"
+// @Param filepath path string true "Source file path"
+// @Param destination query string true "New path, relative to the server root"
+// @Router /api/servers/{id}/file/{filepath} [post]
+// @Security OAuth2Application[server.files.edit]
+func moveFile(c *gin.Context) {
+	server := getServerFromGin(c)
+
+	sourcePath := c.Param("filename")
+	destPath := c.Query("destination")
+
+	if sourcePath == "" || destPath == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	err := server.GetFileServer().Rename(sourcePath, destPath)
 	if response.HandleError(c, err, http.StatusInternalServerError) {
 	} else {
 		c.Status(http.StatusNoContent)

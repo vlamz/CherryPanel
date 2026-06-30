@@ -37,6 +37,12 @@ const createFileOpen = ref(false)
 const createFolderOpen = ref(false)
 const archiveSelectedOpen = ref(false)
 const newItemName = ref('')
+const renameOpen = ref(false)
+const renameTarget = ref(null)
+const renameName = ref('')
+const moveOpen = ref(false)
+const moveTarget = ref(null)
+const moveDestination = ref('')
 const selection = computed(() => {
   return (files.value || []).filter(f => f.isSelected)
 })
@@ -181,6 +187,51 @@ async function createFolder() {
   await refresh()
 }
 
+function startRename(target) {
+  renameTarget.value = target
+  renameName.value = target.name
+  renameOpen.value = true
+}
+
+async function confirmRename() {
+  if (!renameName.value || renameName.value.trim() === '' || renameName.value === renameTarget.value.name) {
+    renameOpen.value = false
+    return
+  }
+  loading.value = true
+  try {
+    const oldPath = `${getCurrentPath()}/${renameTarget.value.name}`
+    const newPath = `${getCurrentPath()}/${renameName.value.trim()}`
+    await props.server.moveFile(oldPath, newPath)
+    renameOpen.value = false
+    await refresh()
+  } finally {
+    loading.value = false
+  }
+}
+
+function startMove(target) {
+  moveTarget.value = target
+  moveDestination.value = `${getCurrentPath()}/${target.name}`.replace(/^\//, '')
+  moveOpen.value = true
+}
+
+async function confirmMove() {
+  if (!moveDestination.value || moveDestination.value.trim() === '') {
+    moveOpen.value = false
+    return
+  }
+  loading.value = true
+  try {
+    const oldPath = `${getCurrentPath()}/${moveTarget.value.name}`
+    await props.server.moveFile(oldPath, moveDestination.value.trim())
+    moveOpen.value = false
+    await refresh()
+  } finally {
+    loading.value = false
+  }
+}
+
 const archiveExtensions = [
   '.7z',
   '.bz2',
@@ -284,6 +335,20 @@ function contextActionsForFile(file) {
       label: t(file.isSelected ? 'files.Deselect' : 'files.Select'),
       hotkey: 's',
       action: () => file.isSelected = !file.isSelected
+    })
+  }
+  if (canEdit && file.name !== '..') {
+    actions.push({
+      icon: 'rename',
+      label: t('files.Rename'),
+      hotkey: 'r',
+      action: () => startRename(file)
+    })
+    actions.push({
+      icon: 'move',
+      label: t('files.Move'),
+      hotkey: 'm',
+      action: () => startMove(file)
     })
   }
   if (canEdit && file.name !== '..' && !file.isFile) {
@@ -481,6 +546,14 @@ async function onDrop(event) {
     <overlay v-model="createFolderOpen" closable :title="t('files.CreateFolder')">
       <text-field v-model="newItemName" />
       <btn color="primary" :disabled="!newItemName || newItemName.trim() === ''" @click="createFolder()"><icon name="check" />{{ t('files.CreateFolder') }}</btn>
+    </overlay>
+    <overlay v-model="renameOpen" closable :title="t('files.Rename')">
+      <text-field v-model="renameName" :label="t('files.NewName')" autofocus @keydown.enter="confirmRename()" />
+      <btn color="primary" :disabled="!renameName || renameName.trim() === ''" @click="confirmRename()"><icon name="check" />{{ t('files.Rename') }}</btn>
+    </overlay>
+    <overlay v-model="moveOpen" closable :title="t('files.Move')">
+      <text-field v-model="moveDestination" :label="t('files.NewPath')" autofocus @keydown.enter="confirmMove()" />
+      <btn color="primary" :disabled="!moveDestination || moveDestination.trim() === ''" @click="confirmMove()"><icon name="check" />{{ t('files.Move') }}</btn>
     </overlay>
     <overlay v-model="archiveSelectedOpen" closable :title="t('files.ArchiveSelectedName')">
       <text-field v-model="newItemName" />
