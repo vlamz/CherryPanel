@@ -6786,6 +6786,12 @@ $mdi-icons: (
 .icon-edit {
   @include icon-name(pencil);
 }
+.icon-rename {
+  @include icon-name(rename-box);
+}
+.icon-move {
+  @include icon-name(file-move);
+}
 .icon-select-group {
   @include icon-name(select-group);
 }

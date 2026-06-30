@@ -7,10 +7,8 @@ on:
 
 jobs:
   build-frontend:
-    name: Build & Release Frontend
+    name: Build Frontend
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Check out code
@@ -47,6 +45,75 @@ jobs:
             $(ls assets/ 2>/dev/null && echo assets/ || true) \
             $(ls manifest.json 2>/dev/null || true)
 
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cherry-frontend
+          path: cherry-frontend.zip
+          if-no-files-found: error
+
+  build-backend:
+    name: Build Backend (Linux amd64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install swag
+        run: |
+          wget -q https://github.com/swaggo/swag/releases/download/v1.16.4/swag_1.16.4_Linux_x86_64.tar.gz
+          mkdir -p ~/go/bin
+          tar -zxf swag*.tar.gz -C ~/go/bin
+          rm -f swag*.tar.gz
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Generate Swagger docs
+        run: ~/go/bin/swag init --pd --md . -o web/swagger -g web/loader.go
+
+      - name: Build backend binary
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 1
+        run: |
+          go build -o cherry-pufferpanel -ldflags "-X 'github.com/pufferpanel/pufferpanel/v3.Hash=${{ github.sha }}' -X 'github.com/pufferpanel/pufferpanel/v3.Version=${{ github.ref_name }}'" -v github.com/pufferpanel/pufferpanel/v3/cmd
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cherry-pufferpanel
+          path: cherry-pufferpanel
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [ build-frontend, build-backend ]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cherry-frontend
+
+      - name: Download backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cherry-pufferpanel
+
+      - name: Mark backend binary executable
+        run: chmod +x cherry-pufferpanel
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -54,9 +121,9 @@ jobs:
           body: |
             ## CherryPanel ${{ github.ref_name }}
 
-            Pre-built frontend files. **No build tools required.**
+            Pre-built frontend and backend files. **No build tools required.**
 
-            ### Installation (replaces PufferPanel frontend)
+            ### Frontend-only update (most releases)
 
             ```bash
             # 1. Download cherry-frontend.zip from this release
@@ -69,8 +136,26 @@ jobs:
             # 4. Hard-refresh your browser: Ctrl+Shift+R
             ```
 
-            > The Go backend (API, daemon, database) is **not touched**.
-            > CherryPanel is a **frontend-only** modification.
+            ### Backend update (only needed when a release changes daemon/API behavior)
+
+            ```bash
+            # 1. Download cherry-pufferpanel from this release
+            chmod +x cherry-pufferpanel
+
+            # 2. Stop the service
+            sudo systemctl stop pufferpanel
+
+            # 3. Replace the binary (back up the old one first if you want a rollback path)
+            sudo cp /usr/sbin/pufferpanel /usr/sbin/pufferpanel.bak
+            sudo cp cherry-pufferpanel /usr/sbin/pufferpanel
+            sudo chown root:root /usr/sbin/pufferpanel
+            sudo chmod 755 /usr/sbin/pufferpanel
+
+            # 4. Restart the service
+            sudo systemctl start pufferpanel
+            ```
+
+            > Built for **Linux amd64** only. The database is never touched by either update.
 
             ### Features
             - Real-time player count for Minecraft, SRCDS/Unturned, Terraria, Factorio, Valheim, Zomboid, Eco, Vintage Story
@@ -79,6 +164,9 @@ jobs:
             - current/max format (e.g. `0/24`)
             - Cherry red branding + redesigned theme presets (Classic, Light, Dark Modern)
             - Full i18n support (English + Turkish)
-          files: cherry-frontend.zip
+            - Drag-and-drop file upload, file rename/move in the file manager
+          files: |
+            cherry-frontend.zip
+            cherry-pufferpanel
           draft: false
           prerelease: false
