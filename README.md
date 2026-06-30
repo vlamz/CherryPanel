@@ -68,6 +68,7 @@ sudo cp -r /tmp/cherry/* /var/www/pufferpanel/
 
 > **Requires a working [PufferPanel v3](https://docs.pufferpanel.com) installation.**
 > The Go backend (API, daemon, database) is **never touched** — only the frontend files are replaced.
+> Most community game templates require Docker on your node — see [Docker Setup](#docker-setup-required-for-most-game-templates) below.
 
 ---
 
@@ -157,6 +158,24 @@ sudo cp -r frontend/dist/index.html frontend/dist/js/ frontend/dist/css/ \
 
 ---
 
+## Docker Setup (required for most game templates)
+
+PufferPanel v3 templates declare which "environment" they support — `host` (runs directly on the node) or `docker` (runs in a container). Most community templates (Minecraft Purpur, Unturned, SA-MP, and many others) **only declare `docker`**. Without Docker reachable by the `pufferpanel` daemon, those templates show up under **"Incompatible templates" → "Incompatible with environment 'host'"** in Create Server, and only `host`-only templates are selectable.
+
+This is not a CherryPanel bug — it's how PufferPanel v3 has worked since its `host`/`docker`/`tty` environment model was introduced, and the community template repo has moved to being Docker-first.
+
+**One-time fix** — run this on the machine hosting your PufferPanel node (Debian/Ubuntu):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vlamz/CherryPanel/v3/scripts/setup-docker.sh | sudo bash
+```
+
+This installs Docker (if missing), adds the `pufferpanel` system user to the `docker` group, and restarts the `pufferpanel` service so it immediately detects Docker. Afterward, **Nodes → your node** should show `Docker: true`, and Docker-only templates become selectable.
+
+> Review the script before piping it to `sudo bash` if you prefer: [`scripts/setup-docker.sh`](scripts/setup-docker.sh). It only touches apt/Docker/the `pufferpanel` user — it never touches your panel database or game server files.
+
+---
+
 ## Configuration
 
 ### CPU normalization
@@ -185,6 +204,7 @@ The panel title comes from the PufferPanel backend. Change it in **Settings → 
 | Node.js (build only) | 22+ |
 | Browsers | All modern browsers (Chrome, Firefox, Safari, Edge) |
 | OS (server) | Linux (amd64 / arm64) |
+| Docker (recommended) | Required for most community templates — see [Docker Setup](#docker-setup-required-for-most-game-templates) |
 | Minecraft plugin support | Vanilla, Essentials, EssentialsX, CMI, Paper, Purpur, Spigot |
 
 ---
@@ -209,6 +229,8 @@ screenshots/
 ├── dashboard.png                  # Dashboard with player counts and performance chart
 ├── console.png                    # Server console with player count widget and action buttons
 └── login.png                      # Login page
+scripts/
+└── setup-docker.sh                # One-time Docker setup for the node (enables Docker-only templates)
 ```
 
 ---
