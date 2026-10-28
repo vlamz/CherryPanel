@@ -55,6 +55,14 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
 }
 
+function formatBps(bps) {
+  if (!bps || bps < 0) return '0 B/s'
+  if (bps < 1024) return bps.toFixed(0) + ' B/s'
+  if (bps < 1024 * 1024) return (bps / 1024).toFixed(1) + ' KB/s'
+  if (bps < 1024 * 1024 * 1024) return (bps / (1024 * 1024)).toFixed(1) + ' MB/s'
+  return (bps / (1024 * 1024 * 1024)).toFixed(1) + ' GB/s'
+}
+
 // ─── History storage ──────────────────────────────────────────
 const LS_HISTORY = 'pp_host_stats_v1'
 const MAX_AGE_MS = 30 * 24 * 3600 * 1000
@@ -89,12 +97,27 @@ const systemStats = ref(null)
 const systemStatsError = ref(false)
 let systemStatsTask = null
 let histSaveCounter = 0
+let prevNetStats = null  // { bytesSent, bytesRecv, ts }
+const netRates = ref(null)  // { txBps, rxBps }
 
 async function fetchSystemStats() {
   try {
     const data = await api.node.getSystemStats()
     systemStats.value = data
     systemStatsError.value = false
+
+    if (data.network && prevNetStats) {
+      const elapsed = (Date.now() - prevNetStats.ts) / 1000
+      if (elapsed > 0) {
+        netRates.value = {
+          txBps: (data.network.bytesSent - prevNetStats.bytesSent) / elapsed,
+          rxBps: (data.network.bytesRecv - prevNetStats.bytesRecv) / elapsed,
+        }
+      }
+    }
+    if (data.network) {
+      prevNetStats = { bytesSent: data.network.bytesSent, bytesRecv: data.network.bytesRecv, ts: Date.now() }
+    }
 
     const now = Date.now()
     history.value.t.push(now)
@@ -571,6 +594,13 @@ onUnmounted(() => {
             </div>
             <span class="stat-row__val">{{ formatBytes(systemStats.disk.used) }} / {{ formatBytes(systemStats.disk.total) }}</span>
           </div>
+          <div v-if="netRates" class="stat-row stat-row--net">
+            <span class="stat-row__label">Net</span>
+            <span class="net-vals">
+              <span class="net-tx">↑ {{ formatBps(netRates.txBps) }}</span>
+              <span class="net-rx">↓ {{ formatBps(netRates.rxBps) }}</span>
+            </span>
+          </div>
 
           <div class="summary-chips">
             <div class="s-chip">
@@ -869,6 +899,20 @@ onUnmounted(() => {
   opacity: 0.65;
   white-space: nowrap;
 }
+
+.stat-row--net {
+  grid-template-columns: 2.8em 1fr;
+}
+
+.net-vals {
+  display: flex;
+  gap: 0.9em;
+  font-size: 0.79em;
+  opacity: 0.65;
+}
+
+.net-tx { color: #818cf8; }
+.net-rx { color: #34d399; }
 
 .stats-error, .stats-loading {
   text-align: center;

@@ -114,6 +114,18 @@ export class ApiClient {
     }
   }
 
+  async patch(url, data, params = {}, headers = {}, options = {}) {
+    try {
+      return await this._axios.patch(this._host + url, data, { params, ...options, headers: this._enhanceHeaders(headers) })
+    } catch (e) {
+      if (typeof options.onError === 'function') {
+        const res = options.onError(e)
+        if (res) return res
+      }
+      if (!Array.isArray(options.unhandledErrors) || options.unhandledErrors.indexOf(e.response.status) === -1) this._handleError(e)
+    }
+  }
+
   async delete(url, params = {}, headers = {}, options = {}) {
     try {
       return await this._axios.delete(this._host + url, { params, ...options, headers: this._enhanceHeaders(headers) })

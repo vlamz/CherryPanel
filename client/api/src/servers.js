@@ -232,6 +232,13 @@ export class ServerApi {
     return true
   }
 
+  async copyFile(id, path, destination) {
+    if (path.startsWith('/')) path = path.substring(1)
+    if (destination.startsWith('/')) destination = destination.substring(1)
+    await this._api.patch(this.getFileUrl(id, path), undefined, { destination })
+    return true
+  }
+
   async archiveFile(id, destination, files) {
     if (destination.startsWith('/')) destination = destination.substring(1)
     if (!Array.isArray(files)) files = [files]
@@ -539,6 +546,10 @@ class Server {
 
   async moveFile(path, destination) {
     return await this._api.server.moveFile(this.id, path, destination)
+  }
+
+  async copyFile(path, destination) {
+    return await this._api.server.copyFile(this.id, path, destination)
   }
 
   async archiveFile(destination, files) {

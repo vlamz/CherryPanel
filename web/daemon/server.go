@@ -82,7 +82,8 @@ func RegisterServerRoutes(e *gin.RouterGroup) {
 		l.PUT("/:serverId/file/*filename", middleware.ResolveServerNode, putFile)
 		l.DELETE("/:serverId/file/*filename", middleware.ResolveServerNode, deleteFile)
 		l.POST("/:serverId/file/*filename", middleware.ResolveServerNode, moveFile)
-		l.OPTIONS("/:serverId/file/*filename", response.CreateOptions("GET", "PUT", "DELETE", "POST"))
+		l.PATCH("/:serverId/file/*filename", middleware.ResolveServerNode, copyFile)
+		l.OPTIONS("/:serverId/file/*filename", response.CreateOptions("GET", "PUT", "DELETE", "POST", "PATCH"))
 
 		l.GET("/:serverId/console", middleware.ResolveServerNode, getLogs)
 		l.POST("/:serverId/console", middleware.ResolveServerNode, postConsole)
@@ -748,6 +749,24 @@ func moveFile(c *gin.Context) {
 	}
 
 	err := server.GetFileServer().Rename(sourcePath, destPath)
+	if response.HandleError(c, err, http.StatusInternalServerError) {
+	} else {
+		c.Status(http.StatusNoContent)
+	}
+}
+
+func copyFile(c *gin.Context) {
+	server := getServerFromGin(c)
+
+	sourcePath := c.Param("filename")
+	destPath := c.Query("destination")
+
+	if sourcePath == "" || destPath == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	err := server.GetFileServer().Copy(sourcePath, destPath)
 	if response.HandleError(c, err, http.StatusInternalServerError) {
 	} else {
 		c.Status(http.StatusNoContent)

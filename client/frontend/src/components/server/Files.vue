@@ -43,6 +43,18 @@ const renameName = ref('')
 const moveOpen = ref(false)
 const moveTarget = ref(null)
 const moveDestination = ref('')
+const copyOpen = ref(false)
+const copyTarget = ref(null)
+const copyDestination = ref('')
+const filterText = ref('')
+
+const filteredFiles = computed(() => {
+  if (!Array.isArray(files.value)) return files.value
+  if (!filterText.value.trim()) return files.value
+  const query = filterText.value.toLowerCase()
+  return files.value.filter(f => f.name === '..' || f.name.toLowerCase().includes(query))
+})
+
 const selection = computed(() => {
   return (files.value || []).filter(f => f.isSelected)
 })
@@ -67,6 +79,7 @@ onUnmounted(async () => {
 })
 
 watch(currentPath, async (newPath) => {
+  filterText.value = ''
   const res = await props.server.getFile(newPath.map(e => e.name).join('/'))
   files.value = res.sort(sortFiles)
 }, {deep: true})
@@ -218,6 +231,12 @@ function startMove(target) {
   moveOpen.value = true
 }
 
+function startCopy(target) {
+  copyTarget.value = target
+  copyDestination.value = `${getCurrentPath()}/${target.name}`.replace(/^\//, '')
+  copyOpen.value = true
+}
+
 async function confirmMove() {
   if (!moveDestination.value || moveDestination.value.trim() === '') {
     moveOpen.value = false
@@ -231,6 +250,24 @@ async function confirmMove() {
     await refresh()
   } catch (e) {
     toast.error(t('files.MoveFailed'))
+  } finally {
+    loading.value = false
+  }
+}
+
+async function confirmCopy() {
+  if (!copyDestination.value || copyDestination.value.trim() === '') {
+    copyOpen.value = false
+    return
+  }
+  loading.value = true
+  try {
+    const srcPath = `${getCurrentPath()}/${copyTarget.value.name}`
+    await props.server.copyFile(srcPath, copyDestination.value.trim())
+    copyOpen.value = false
+    await refresh()
+  } catch (e) {
+    toast.error(t('files.CopyFailed'))
   } finally {
     loading.value = false
   }
@@ -354,6 +391,14 @@ function contextActionsForFile(file) {
       hotkey: 'm',
       action: () => startMove(file)
     })
+    if (file.isFile) {
+      actions.push({
+        icon: 'copy',
+        label: t('files.Copy'),
+        hotkey: 'c',
+        action: () => startCopy(file)
+      })
+    }
   }
   if (canEdit && file.name !== '..' && !file.isFile) {
     actions.push({
@@ -498,6 +543,7 @@ async function onDrop(event) {
           <a @click="currentPath.splice(index + 1)" v-text="segment.name" />
         </span>
       </h3>
+      <text-field v-model="filterText" :placeholder="t('files.Filter')" class="file-filter-input" @keydown.stop />
       <span class="spacer" />
       <span v-if="selection.length === 0" class="controls">
         <btn v-if="canEdit" v-hotkey="'f a'" variant="icon" :tooltip="t('files.ArchiveCurrent')" @click="archiveCurrentDirectory()"><icon name="archive" /></btn>
@@ -517,7 +563,7 @@ async function onDrop(event) {
     <div v-hotkey="'f l'" class="file-list" @hotkey="fileListHotkey">
       <loader v-if="!Array.isArray(files)" />
       <!-- eslint-disable-next-line vue/no-template-shadow -->
-      <a v-for="(file, index) in files" v-else :key="file.name" :ref="trackFileEl(index)" tabindex="0" :class="['file', file.isSelected ? 'selected' : '']" @click="openFile(file)" @keydown.enter="openFile(file)" @keydown.space="file.isSelected = !file.isSelected">
+      <a v-for="(file, index) in filteredFiles" v-else :key="file.name" :ref="trackFileEl(index)" tabindex="0" :class="['file', file.isSelected ? 'selected' : '']" @click="openFile(file)" @keydown.enter="openFile(file)" @keydown.space="file.isSelected = !file.isSelected">
         <icon class="file-icon" :name="getIcon(file)" />
         <div class="details">
           <div class="name">{{ file.name }}</div>
@@ -558,6 +604,10 @@ async function onDrop(event) {
     <overlay v-model="moveOpen" closable :title="t('files.Move')">
       <text-field v-model="moveDestination" :label="t('files.NewPath')" autofocus @keydown.enter="confirmMove()" />
       <btn color="primary" :disabled="!moveDestination || moveDestination.trim() === ''" @click="confirmMove()"><icon name="check" />{{ t('files.Move') }}</btn>
+    </overlay>
+    <overlay v-model="copyOpen" closable :title="t('files.Copy')">
+      <text-field v-model="copyDestination" :label="t('files.CopyTo')" autofocus @keydown.enter="confirmCopy()" />
+      <btn color="primary" :disabled="!copyDestination || copyDestination.trim() === ''" @click="confirmCopy()"><icon name="check" />{{ t('files.Copy') }}</btn>
     </overlay>
     <overlay v-model="archiveSelectedOpen" closable :title="t('files.ArchiveSelectedName')">
       <text-field v-model="newItemName" />

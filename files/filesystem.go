@@ -2,6 +2,7 @@ package files
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ type FileServer interface {
 	RemoveAll(path string) error
 	Glob(pattern string) ([]string, error)
 	Symlink(oldname, newname string) error
+	Copy(source, target string) error
 
 	Close() error
 }
@@ -213,6 +215,30 @@ func (sfp *fileServer) Rename(source, target string) error {
 	defer utils.Close(targetFolder)
 
 	err = unix.Renameat2(getFd(sourceFolder), sourceName, getFd(targetFolder), targetName, 0)
+	return err
+}
+
+func (sfp *fileServer) Copy(source, target string) error {
+	source = prepPath(source)
+	target = prepPath(target)
+
+	src, err := sfp.OpenFile(source, os.O_RDONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer utils.Close(src)
+
+	if err = sfp.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		return err
+	}
+
+	dst, err := sfp.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer utils.Close(dst)
+
+	_, err = io.Copy(dst, src)
 	return err
 }
 

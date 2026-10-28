@@ -35,5 +35,9 @@
   "DeleteSelected": "Delete 1 file | Delete {n} files",
   "ConfirmDeleteSelected": "Do you really want to delete this file? | Do you really want to delete these {n} files?",
   "RenameFailed": "Failed to rename file",
-  "MoveFailed": "Failed to move file"
+  "MoveFailed": "Failed to move file",
+  "Filter": "Filter files...",
+  "Copy": "Copy",
+  "CopyTo": "Copy to",
+  "CopyFailed": "Failed to copy file"
 }

@@ -11,12 +11,14 @@ import (
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
+	psnet "github.com/shirou/gopsutil/net"
 )
 
 type systemStatsResponse struct {
-	CPU    float64     `json:"cpu"`
-	Memory memoryStats `json:"memory"`
-	Disk   diskStats   `json:"disk"`
+	CPU     float64      `json:"cpu"`
+	Memory  memoryStats  `json:"memory"`
+	Disk    diskStats    `json:"disk"`
+	Network networkStats `json:"network"`
 }
 
 type memoryStats struct {
@@ -29,6 +31,11 @@ type diskStats struct {
 	Used    uint64  `json:"used"`
 	Total   uint64  `json:"total"`
 	Percent float64 `json:"percent"`
+}
+
+type networkStats struct {
+	BytesSent uint64 `json:"bytesSent"`
+	BytesRecv uint64 `json:"bytesRecv"`
 }
 
 func registerSystemStats(g *gin.RouterGroup) {
@@ -64,8 +71,17 @@ func getSystemStats(c *gin.Context) {
 		diskStat = &disk.UsageStat{}
 	}
 
+	netCounters, err := psnet.IOCounters(false)
+	netVal := networkStats{}
+	if err == nil && len(netCounters) > 0 {
+		netVal = networkStats{
+			BytesSent: netCounters[0].BytesSent,
+			BytesRecv: netCounters[0].BytesRecv,
+		}
+	}
+
 	c.JSON(http.StatusOK, systemStatsResponse{
-		CPU:    cpuVal,
+		CPU: cpuVal,
 		Memory: memoryStats{
 			Used:    memStat.Used,
 			Total:   memStat.Total,
@@ -76,5 +92,6 @@ func getSystemStats(c *gin.Context) {
 			Total:   diskStat.Total,
 			Percent: diskStat.UsedPercent,
 		},
+		Network: netVal,
 	})
 }
