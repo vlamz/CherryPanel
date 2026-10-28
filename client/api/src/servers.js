@@ -235,7 +235,7 @@ export class ServerApi {
   async archiveFile(id, destination, files) {
     if (destination.startsWith('/')) destination = destination.substring(1)
     if (!Array.isArray(files)) files = [files]
-    files.map(file => file.startsWith('/') ? file.substring(1) : file)
+    files = files.map(file => file.startsWith('/') ? file.substring(1) : file)
     await this._api.post(`/api/servers/${id}/archive/${destination}`, files)
     return true
   }

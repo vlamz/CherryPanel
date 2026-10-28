@@ -205,6 +205,8 @@ async function confirmRename() {
     await props.server.moveFile(oldPath, newPath)
     renameOpen.value = false
     await refresh()
+  } catch (e) {
+    toast.error(t('files.RenameFailed'))
   } finally {
     loading.value = false
   }
@@ -227,6 +229,8 @@ async function confirmMove() {
     await props.server.moveFile(oldPath, moveDestination.value.trim())
     moveOpen.value = false
     await refresh()
+  } catch (e) {
+    toast.error(t('files.MoveFailed'))
   } finally {
     loading.value = false
   }
