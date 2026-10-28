@@ -7,7 +7,7 @@
   "UnnamedClient": "İsimsiz iki aşamalı doğrulama",
   "Docs": "API dökümantasyonlarını görüntüle",
   "Clients": "İki aşamalı doğrulama",
-  "Delete": "{clientName} silinsin mi?",
-  "ConfirmDelete": "Bu iki aşamalı doğrulamanın silinmesinden kaynaklanabilecek sorunların farkındayım ve devam etmek istiyorum.",
+  "Delete": "OAuth2 İstemcisini Sil",
+  "ConfirmDelete": "{name} adlı OAuth2 istemcisini silmek istediğinizden emin misiniz? Aynı kimlik bilgileriyle yeniden oluşturamazsınız!",
   "AccountDescription": "Burada listelenen iki aşamalı doğrulama tüm hesap izinlerini devralır"
 }
